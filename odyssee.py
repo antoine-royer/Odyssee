@@ -1,7 +1,7 @@
 # --------------------------------------------------
-# Odyssée (Version 3.5)
+# Odyssée (Version 3.6)
 # by Sha-chan~
-# last version released on the Febuary 28 2021
+# last version released on the June 19 2021
 #
 # code provided with licence :
 # GNU General Public Licence v3.0
@@ -228,6 +228,8 @@ def stat(message):
     answer.title = info[0]
     answer.description = f"Statistiques de {info[0]}, {info[1]}\n de niveau {info[2]}"
     answer.color = info[11]
+    if info[15]: answer.thumbnail.url = info[15]
+
     for index, capacity_name in enumerate(("Courage", "Force", "Habileté", "Rapidité", "Défense")):
         answer.add_field(name=capacity_name, value=info[3 + index], inline=True)
 
@@ -241,7 +243,7 @@ def stat(message):
     if len(info[13]):
         object_in_inventory = ""
         for item in info[13]:
-            object_in_inventory += f" - {item[0]} {('', f' ({item[1]})')[item[1] != -1]}\n"
+            object_in_inventory += f" ❖ {item[0]} {('', f' ({item[1]})')[item[1] != -1]}\n"
         answer.add_field(name="Inventaire", value=object_in_inventory, inline=True)
     else:
         answer.add_field(name="Inventaire", value="< vide >", inline=True)

@@ -85,11 +85,12 @@ def get_power_by_species(species_name):
 # --------------------------------------------------
 
 class Player:
-    def __init__(self, identifier, name, species, stat=None, place="< inconnu >", inventory=None, note=None, power=None):
+    def __init__(self, identifier, name, species, avatar, stat=None, place="< inconnu >", inventory=None, note=None, power=None):
         self.id = identifier
         self.name = name
         self.species = species
         self.place = place
+        self.avatar = avatar
 
         if stat: self.stat = stat
         else: self.stat = stat_gen()
@@ -122,7 +123,7 @@ class Player:
         else: return 0
 
     def get_stat(self):
-        return [self.name, self.species, self.get_level()] + self.stat + [self.place, self.inventory, self.note]
+        return [self.name, self.species, self.get_level()] + self.stat + [self.place, self.inventory, self.note, self.avatar]
 
     def inshop(self):
         for shop_key, all_shop_name in data_shop_name().items():
@@ -324,7 +325,7 @@ def get_speed(mean, weather, land):
 # --------------------------------------------------
 
 def object_to_save(player):
-    return [player.id, player.name, player.species, player.stat, player.place, player.inventory, player.note, player.power]
+    return [player.id, player.name, player.species, player.avatar, player.stat, player.place, player.inventory, player.note, player.power]
 
 def save_to_object(save):
     return Player(*save)

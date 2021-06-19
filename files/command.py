@@ -138,7 +138,7 @@ class Command:
             return f"*Erreur : syntaxe invalide : `{self.PREFIX}nouveau < nom_de_l'espèce >`.*"
         
         if not user[1] in self.players:
-            self.players.update({user[1] : Player(user[1], user[0], species)})
+            self.players.update({user[1] : Player(user[1], user[0], species, str(message.author.avatar))})
             return f"{user[0]}, un(e) {species}, est apparu(e)."
         else:
             return f"*Erreur : {user[0]} est déjà enregistré(e).*"
@@ -229,7 +229,7 @@ class Command:
         
         enemy_name = enemy_name.capitalize()
         level = user.get_level()
-        self.players.update({enemy_id : Player(enemy_id, enemy_name, "Ennemi", stat_gen(randint(1, 2 * level), user.stat[8], True), user.place)})
+        self.players.update({enemy_id : Player(enemy_id, enemy_name, "Ennemi", "", stat_gen(randint(1, 2 * level), user.stat[8], True), user.place)})
 
         return f"__{user.name}__ se prépare pour combattre {enemy_name}.\nEntrez `{self.PREFIX}combat {enemy_name} [ {self.SEP} < nom_de_l'arme >]` pour attaquer."
 
