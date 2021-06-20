@@ -1,4 +1,4 @@
-# Statistiques : Courage (0), Force (1), Habileté (2), Rapidité (3) Défense (4), Vie (5), Mana (6), Argent (7), Couleur (8)
+# Statistiques : Courage (0), Force (1), Habileté (2), Rapidité (3) Défense (4), Vie (5), Mana (6), Argent (7), Poids porté(8), Couleur (9)
 
 from random import randint
 from files.shop import *
@@ -18,9 +18,9 @@ def stat_gen(level=1, color=None, enemy=False):
     stat.append(0)
     
     if enemy:
-        stat += [randint(25, 50 * level), 0, randint(2, 10 * level), color]
+        stat += [randint(25, 50 * level), 0, randint(2, 10 * level), 0, color]
     else:
-        stat += [100, 5, 15, color]
+        stat += [100, 5, 15, 0, color]
     return stat
 
 # --- Roll a die --- #
@@ -30,45 +30,15 @@ def roll_die(faces = 20, nb = 1):
 
 # --- Get the object's statistic --- #
 
+# renvoie un tuple : (nom, stat, type de l'objet)
 def object_stat(object_name, shop_name=None):
+    object_stat = data_get_object(object_name, shop_name)
 
-    def auto_complete(database, name):
-        match = {len(item_name): item_name for item_name in database if item_name in name}
-        if match:
-            return max(match.keys()), match[max(match.keys())]
-
-    def search_all(object_name):
-        match = {}
-        database = data_shop()
-
-        for shop in database:
-            rslt = auto_complete(database[shop], object_name)
-            if rslt:
-                match[rslt[0]] = (rslt[1], shop)
-
-        if match:
-            name, shop = match[max(match.keys())]
-            statistic = database[shop][name]
-            return name, list(statistic[0].values()), statistic[1]
-
-        return "", [0 for _ in range(8)], -1
-
-    def search_shop(object_name, shop_name):
-        database = data_shop()[shop_name]
-
-        _, name = auto_complete(database, object_name)
-        if name:
-            statistic = database[name]
-            return name, list(statistic[0].values()), statistic[1]
-
-        return "", [0 for _ in range(8)], -1
-
-    object_name = object_name.lower()
-    if shop_name:
-        return search_shop(object_name, shop_name)
+    if object_stat:
+        return object_stat[0], object_stat[1: -1], object_stat[-1]
     else:
-        return search_all(object_name)
-            
+        return "", [0 for _ in range(8)], -1
+
 # --- get the power --- #
 
 def get_power_by_species(species_name):
@@ -85,7 +55,7 @@ def get_power_by_species(species_name):
 # --------------------------------------------------
 
 class Player:
-    def __init__(self, identifier, name, species, avatar, stat=None, place="< inconnu >", inventory=None, note=None, power=None):
+    def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", inventory=None, note=None, power=None):
         self.id = identifier
         self.name = name
         self.species = species
@@ -94,6 +64,7 @@ class Player:
 
         if stat: self.stat = stat
         else: self.stat = stat_gen()
+        self.max_weight = 10 * self.stat[1]
         
         if inventory: self.inventory = inventory
         else: self.inventory = list()
@@ -126,10 +97,7 @@ class Player:
         return [self.name, self.species, self.get_level()] + self.stat + [self.place, self.inventory, self.note, self.avatar]
 
     def inshop(self):
-        for shop_key, all_shop_name in data_shop_name().items():
-            for name_to_detect in all_shop_name:
-                if name_to_detect in self.place.lower(): return shop_key
-        return False
+        return data_shop_name(self.place)
 
     def get_special_powers(self):
         return self.power
@@ -142,7 +110,7 @@ class Player:
             name, stat, stockable = object_stat(item[0])
             if (stockable == -1 and item[0] == object_name) or name == object_name: 
                 return index, stat, stockable
-        return -1, -1, ref_check
+        return -1, -1, -1
 
     def find_by_type(self, *object_type):
         for item in self.inventory:
@@ -154,13 +122,16 @@ class Player:
 
     def stat_add(self, stat_to_add): # From Courage to Mana (include Health, but neither money nor color)
         for i in range(7): self.capacity_modify(i, stat_to_add[i])
+        self.max_weight = 10 * self.stat[1]
 
     def stat_sub(self, stat_to_sub):
         for i in range(7): self.capacity_modify(i, -stat_to_sub[i])
+        self.max_weight = 10 * self.stat[1]
 
     def object_add(self, object_name):
         index = self.have(object_name)[0]
         _, stat, stockable = object_stat(object_name)
+        if stockable != 2: self.stat[8] += stat[8]
         if stockable in (1, 5):           
             if index + 1:
                 self.inventory[index][1] += 1
@@ -173,6 +144,7 @@ class Player:
 
     def object_del(self, object_name):
         index, stat, stockable = self.have(object_name)
+        self.stat[8] -= stat[8]
         if stockable in (1, 5):
             self.inventory[index][1] -= 1
             if self.inventory[index][1] <= 0: self.inventory.pop(index)
@@ -186,6 +158,7 @@ class Player:
         if self.inventory[index][1] <= 0:
             self.inventory.pop(index)
 
+        self.stat[8] -= stat[8]
         self.stat_add(stat)
 
     def capacity_modify(self, capacity_index, amount):

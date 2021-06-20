@@ -1,7 +1,7 @@
 # --------------------------------------------------
-# Odyssée (Version 3.6)
+# Odyssée (Version 4.0)
 # by Sha-chan~
-# last version released on the June 19 2021
+# last version released on the June 20 2021
 #
 # code provided with licence :
 # GNU General Public Licence v3.0
@@ -188,14 +188,16 @@ def article(message):
         answer.description = "Listes des articles disponibles"
         answer.color = color
 
-        for item_name in info[1]:
-            item_stat = info[1][item_name][0]
+        for item in info[1]:
+            item_stat = item[1: -1]
             
-            stat = ""
-            for stat_name in item_stat:
-                if item_stat[stat_name]: stat += f"{stat_name} : {item_stat[stat_name]}, "
-             
-            answer.add_field(name=item_name.capitalize(), value=stat[:-2], inline=False)
+            stat = "`"
+            stat_name = ("Courage", "Force", "Habileté", "Rapidité", "Défense", "Vie", "Mana", "Argent", "Poids")
+            for index in range(9):
+                if item_stat[index]: stat += f"{stat_name[index]} : {item_stat[index]}, "
+            stat = stat[:-2] + "`"
+                        
+            answer.add_field(name=item[0].capitalize(), value=stat, inline=False)
             
         message.channel.send(embed = answer.to_json())
         return None
@@ -208,7 +210,7 @@ def article(message):
 
         value = "\n".join([f"`{name}.: {info[1][0][index]}`" for index, name in enumerate(("Courage .", "Force ...", "Habileté ", "Rapidité ", "Défense .", "Vie .....", "Mana ...."))])
         answer.add_field(name="Caractéristiques", value=value, inline=True)
-        answer.add_field(name="Divers", value=f"`Prix ..: {abs(info[1][0][7])} Drachmes`\n`Usage .: {('à porter', 'à utiliser', 'utilisation immédiate', 'arme de mêlée', 'arme à distance', 'projectile')[info[1][1]]}`", inline=True)
+        answer.add_field(name="Divers", value=f"`Prix ..: {abs(info[1][0][7])} Drachmes`\n`Usage .: {('à porter', 'à utiliser', 'utilisation immédiate', 'arme de mêlée', 'arme à distance', 'projectile')[info[1][1]]}`\n`Poids .: {info[1][0][8]}`", inline=True)
         message.channel.send(embed = answer.to_json())
         return None
 
@@ -227,29 +229,29 @@ def stat(message):
     answer = Embed()
     answer.title = info[0]
     answer.description = f"Statistiques de {info[0]}, {info[1]}\n de niveau {info[2]}"
-    answer.color = info[11]
-    if info[15]: answer.thumbnail.url = info[15]
+    answer.color = info[12]
+    if info[16]: answer.thumbnail.url = info[16]
 
     for index, capacity_name in enumerate(("Courage", "Force", "Habileté", "Rapidité", "Défense")):
         answer.add_field(name=capacity_name, value=info[3 + index], inline=True)
 
-    
+    answer.add_field(name="Poids", value=f"{info[11]} / {10 * info[4]}", inline=True)
     answer.add_field(name="Mana", value=info[9], inline=True)
     answer.add_field(name="Vie", value=info[8], inline=True)
     answer.add_field(name="Argent", value=info[10], inline=True)
     
-    answer.add_field(name="Lieu", value=info[12], inline=True)
+    answer.add_field(name="Lieu", value=info[13], inline=True)
 
-    if len(info[13]):
+    if len(info[14]):
         object_in_inventory = ""
-        for item in info[13]:
+        for item in info[14]:
             object_in_inventory += f" ❖ {item[0]} {('', f' ({item[1]})')[item[1] != -1]}\n"
         answer.add_field(name="Inventaire", value=object_in_inventory, inline=True)
     else:
         answer.add_field(name="Inventaire", value="< vide >", inline=True)
     
-    if info[14][0][0]:
-        note = "\n".join([f"{i[0]} - {i[1]}" for i in info[14]])
+    if info[15][0][0]:
+        note = "\n".join([f"{i[0]} - {i[1]}" for i in info[15]])
     else:
         note = "< aucune >"
 
@@ -392,6 +394,12 @@ def modifier(message):
 
 @odyssee.command
 @check_admin
+def ajout_objet(message):
+    message.channel.send(cmnd.bdd_object_add(message))
+
+
+@odyssee.command
+@check_admin
 def joueur_plus(message):
     message.channel.send(cmnd.player_create(message))
     cmnd.save()
@@ -454,6 +462,7 @@ def administration(message):
         "Sauvegarder la partie et obtenir une copie locale": (["sauvegarde"], ""),
         "Charger une partie externe": (["charger"], ""),
         "Modifier les statistiques d'un joueur": (["modifier", "< nom_joueur >", "< nom_capacité >", "< valeur > [", "< nombre >]"], "__Capacité disponibles :__ Courage, Force, Habileté, Rapidité, Défense, Vie, Mana, Argent, Lieu, objet+, objet-, nom, espèce, toutes, pouvoir+, pouvoir-"),
+        "Ajouter un nouvel objet": (["ajout_objet", "< id magasin >", "< id type >", "< nom >", "< courage >", "< force >", "< habilité >", "< rapidité >", "< défense >", "< vie >", "< mana >", "< argent >", "< poids >"], ""),
         "Créer un nouveau joueur": (["joueur_plus", "< nom >", "< espèce >"], ""),
         "Supprimer un joueur": (["joueur_moins", "< nom >"], ""),
         "Kicker un joueur": (["kick", "< pseudo_joueur >"], ""),

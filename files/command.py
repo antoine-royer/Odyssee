@@ -90,7 +90,7 @@ class Command:
             return self.color_list()
     
         
-        user.stat[8] = color_id
+        user.stat[9] = color_id
         
         return f"La couleur de __{user.name}__ et devenue {color_name}"
     
@@ -188,7 +188,7 @@ class Command:
         elif len(args) == 2:
             category, lenght = args
         else:
-            return f"*Erreur : syntace invalide : `{self.PREFIX}nom [< categorie > [ {self.SEP} < longueur >]]`*"
+            return f"*Erreur : syntaxe invalide : `{self.PREFIX}nom [< categorie > [ {self.SEP} < longueur >]]`*"
         
         category, lenght = category.lower(), lenght.lower()
 
@@ -369,21 +369,21 @@ class Command:
 
         enemy_weapon_name, enemy_weapon_stat, enemy_arrow, ripost = enemy_weapon(enemy, (3, 4)[user_weapon[2] == 4])
         
-        result = f"__{user.name}__ se bat avec l'arme : '{weapon_name}'.\n"
+        result = f"**Armes**\n__{user.name}__ se bat avec l'arme : '{weapon_name}'.\n"
         if ripost: result += f"__{enemy.name}__ se bat avec l'arme : '{enemy_weapon_name}'.\n"
         else: result += f"__{enemy.name}__ ne peut pas riposter.\n"
 
         user.stat_add(user_weapon[1])
         enemy.stat_add(enemy_weapon_stat)
         
-        result += f"Les capacités temporaires sont :\n({user.name} | {enemy.name})\n"
+        result += f"\n**Capacités**\nLes capacités temporaires sont :\n({user.name} | {enemy.name})\n"
 
         capacity_line = [f"`{name}.: {user.stat[index]}" for index, name in enumerate(("Courage .", "Force ...", "Habileté ", "Rapidité ", "Défense ."))]
         len_max = max([len(i) for i in capacity_line]) + 1
         capacity_line = [i + " " * (len_max - len(i)) + f"| {enemy.stat[index]}`" for index, i in enumerate(capacity_line)]
 
         result += "\n".join(capacity_line)
-        result += "\n\n"
+        result += "\n\n**Combat**\n"
 
         if user_weapon[2] == 4:
             fight = ranged_fight(user, enemy, enemy_arrow, ripost)
@@ -547,12 +547,12 @@ class Command:
             item_name = item_name[0]
             _, stat, check = object_stat(item_name, shop_name)
             if check != -1:
-                return (item_name, (stat, check)), user.stat[8], 1
+                return (item_name, (stat, check)), user.stat[9], 1
             else:
                 return f"*Erreur : cet objet n'est pas vendu ici. Consultez la liste des objets disponibles via : `{self.PREFIX}article`.*", -1, 2
 
         else:
-            return (user.place, data_shop()[shop_name]), user.stat[8], 0
+            return (user.place, data_get_all_objects(shop_name)), user.stat[9], 0
 
     def buy(self, message):
         user = self.id_to_object(get_user(message)[1])
@@ -707,7 +707,8 @@ class Command:
             if not shop:
                 return f"*Erreur : {user.name} n'est pas dans un magasin.*"
 
-            all_item = data_shop()[shop]
+            all_item = [i[0] for i in data_get_all_objects(shop)]
+
 
             item_name, stat, check = object_stat(object_name)
             price = int(0.75 * abs(stat[7]))
@@ -740,7 +741,6 @@ class Command:
         return get_speed(mean, weather, land_type)
 
         
-
     def time_travel(self, message):
         args = analyse(message, self.SEP)
 
@@ -860,6 +860,15 @@ class Command:
         
         return result
 
+    def bdd_object_add(self, message):
+        arguments = analyse(message, self.SEP)
+        if len(arguments) != 12: return f"*Erreur : syntaxe invalide `{self.PREFIX}ajout_objet < id magasin > {self.SEP} < id type > {self.SEP} < nom > {self.SEP} < courage > {self.SEP} < force > {self.SEP} < habileté> {self.SEP} < rapidité > {self.SEP} < défense >  {self.SEP} < vie >  {self.SEP} < mana > {self.SEP} < argent > {self.SEP} < poids >`.*"
+        try:
+            data_add_object(arguments)
+            return "Objet ajouté."
+        except:
+            return "*Erreur : l'opération a échouée.*"
+
     def player_create(self, message):
         try:
             name, species = analyse(message, self.SEP)
@@ -927,4 +936,3 @@ class Command:
         save_delete()
         
         return "Sauvegarde effacée."
-

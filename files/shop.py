@@ -1,104 +1,110 @@
-# ----- Code numérique pour le stockage des objets
-# 0 : à porter
-# 1 : peut-être consommé plus tard
-# 2 : doit être consommé au moment de l'achat
-# 3 : arme de mêlée
-# 4 : arme à distance
-# 5 : projectiles
-# -----
+import sqlite3
 
-def data_shop_name():
-    return {
+
+def data_shop_name(place):
+    shop_data = {
         "auberge": ["auberge", "taverne", "gargote", "hôtel"],
         "forge": ["forge", "armurerie"],
         "officine": ["pharmacie", "herboristerie", "officine", "apothicairerie"],
         "tannerie": ["maroquinerie", "tannerie"],
         "écurie": ["écurie", "haras"],
-        "port": ["port"]
-        }
-
-
-def data_shop():
-    return {
-    "auberge":
-        {
-            "chambre": ({"Courage":10, "Force":10, "Habileté":10, "Rapidité":10, "Défense":0, "Vie":25, "Mana":5, "Argent":-40}, 2),
-            "repas chaud": ({"Courage":10, "Force":10, "Habileté":0, "Rapidité":10, "Défense":0, "Vie":10, "Mana":0, "Argent":-20}, 2),
-            "repas frois": ({"Courage":5, "Force":5, "Habileté":0, "Rapidité":5, "Défense":0, "Vie":5, "Mana":0, "Argent":-15}, 2),
-            "bière": ({"Courage":2, "Force":2, "Habileté":2, "Rapidité":2, "Défense":0, "Vie":0, "Mana":0, "Argent":-10}, 2),
-            "lait de chèvre": ({"Courage":5, "Force":5, "Habileté":5, "Rapidité":5, "Défense":0, "Vie":5, "Mana":0, "Argent":-10}, 2),
-            "vin": ({"Courage":5, "Force":5, "Habileté":-2, "Rapidité":-1, "Défense":0, "Vie":1, "Mana":0, "Argent":-10}, 1),
-            "viande séchée": ({"Courage":2, "Force":2, "Habileté":2, "Rapidité":2, "Défense":0, "Vie":2, "Mana":0, "Argent":-10}, 1),
-            "pain": ({"Courage":5, "Force":0, "Habileté":5, "Rapidité":0, "Défense":0, "Vie":5, "Mana":0, "Argent":-5}, 1),
-            "fromage": ({"Courage":0, "Force":10, "Habileté":0, "Rapidité":5, "Défense":0, "Vie":5, "Mana":0, "Argent":-10}, 1),
-            "vinaigre": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "huile": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "miel": ({"Courage":10, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":5, "Mana":0, "Argent":-15}, 1),
-            "sel": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "gousse d'ail": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-        },
-
-    "forge":
-        {
-            "épée": ({"Courage":5, "Force":0, "Habileté":-5, "Rapidité":10, "Défense":5, "Vie":0, "Mana":0, "Argent":-20}, 3),
-            "arc": ({"Courage":25, "Force":0, "Habileté":15, "Rapidité":15, "Défense":0, "Vie":0, "Mana":0, "Argent":-70}, 4),
-            "hache": ({"Courage":10, "Force":10, "Habileté":15, "Rapidité":20, "Défense":0, "Vie":0, "Mana":0, "Argent":-50}, 3),
-            "arbalète": ({"Courage":5, "Force":0, "Habileté":15, "Rapidité":25, "Défense":0, "Vie":0, "Mana":0, "Argent":-40}, 4),
-            "côte de maille": ({"Courage":5, "Force":0, "Habileté":-5, "Rapidité":-5, "Défense":15, "Vie":0, "Mana":0, "Argent":-20}, 0),
-            "armure": ({"Courage":15, "Force":0, "Habileté":-10, "Rapidité":-10, "Défense":100, "Vie":0, "Mana":0, "Argent":-100}, 0),
-            "bouclier": ({"Courage":10, "Force":0, "Habileté":-10, "Rapidité":-5, "Défense":25, "Vie":0, "Mana":0, "Argent":-30}, 0),
-            "armure souple": ({"Courage":10, "Force":0, "Habileté":-5, "Rapidité":-10, "Défense":25, "Vie":0, "Mana":0, "Argent":-25}, 0),
-            "dague": ({"Courage":-5, "Force":-5, "Habileté":10, "Rapidité":10, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 3),
-            "katana": ({"Courage":10, "Force":15, "Habileté":5, "Rapidité":5, "Défense":5, "Vie":0, "Mana":0, "Argent":-30}, 3),
-            "épée batarde": ({"Courage":10, "Force":15, "Habileté":5, "Rapidité":-10, "Défense":10, "Vie":0, "Mana":0, "Argent":-30}, 3),
-            "grand arc": ({"Courage":20, "Force":0, "Habileté":15, "Rapidité":10, "Défense":0, "Vie":0, "Mana":0, "Argent":-40}, 4),
-            "arc long": ({"Courage":10, "Force":20, "Habileté":10, "Rapidité":5, "Défense":0, "Vie":0, "Mana":0, "Argent":-50}, 4),
-            "hallebarde": ({"Courage":5, "Force":10, "Habileté":-5, "Rapidité":-5, "Défense":0, "Vie":0, "Mana":0, "Argent":-20}, 3),
-            "flèche": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-2}, 5),
-            "carreau": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-2}, 5),
-        },
-
-    "officine":
-        {
-            "potion de courage": ({"Courage":10, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-30}, 1),
-            "potion de force": ({"Courage":0, "Force":10, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-30}, 1),
-            "potion d'habileté": ({"Courage":0, "Force":0, "Habileté":10, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-30}, 1),
-            "potion de rapidité": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":10, "Défense":0, "Vie":0, "Mana":0, "Argent":-30}, 1),
-            "potion de vie": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":10, "Mana":0, "Argent":-30}, 1),
-            "potion de mana": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":10, "Argent":-30}, 1),
-            "potion de puissance": ({"Courage":20, "Force":20, "Habileté":20, "Rapidité":20, "Défense":20, "Vie":20, "Mana":20, "Argent":-100}, 1),
-            "poison": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-30}, 0),
-            "fiole vide": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "cire d'abeille": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "écorce de saule 5g": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "fleurs d'oranger 5g": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "feuilles de sauge 5g": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "baies de genévrier 5g": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "fruits de tilleul 5g": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "racines de muguet 5g": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "baies de belladone 5g": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-            "antidote": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-15}, 1),
-        },
-
-    "tannerie":
-        {
-            "bottes": ({"Courage":10, "Force":0, "Habileté":0, "Rapidité":5, "Défense":5, "Vie":0, "Mana":0, "Argent":-30}, 0),
-            "cape": ({"Courage":0, "Force":5, "Habileté":0, "Rapidité":10, "Défense":10, "Vie":0, "Mana":0, "Argent":-60}, 0),
-            "bottes enchantées": ({"Courage":10, "Force":0, "Habileté":0, "Rapidité":0, "Défense":5, "Vie":0, "Mana":5, "Argent":-60}, 0),
-            "cape enchantée": ({"Courage":0, "Force":5, "Habileté":0, "Rapidité":0, "Défense":10, "Vie":0, "Mana":5, "Argent":-120}, 0),
-            "manteau": ({"Courage":5, "Force":0, "Habileté":10, "Rapidité":10, "Défense":5, "Vie":0, "Mana":0, "Argent":-50}, 0),
-            "gants": ({"Courage":0, "Force":10, "Habileté":5, "Rapidité":0, "Défense":5, "Vie":0, "Mana":0, "Argent":-30}, 0),
-        },
-
-    "écurie":
-        {
-            "cheval": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":10, "Défense":0, "Vie":0, "Mana":0, "Argent":-100}, 0),
-        },
-
-    "port":
-        {
-            "barque": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-100}, 0),
-            "voilier": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-300}, 0),
-            "goélette franche": ({"Courage":0, "Force":0, "Habileté":0, "Rapidité":0, "Défense":0, "Vie":0, "Mana":0, "Argent":-10000}, 0),
-        },
+        "port": ["port"],
+        "librairie": ["librairie", "bouquiniste", "libraire", "bibliothèque"]
     }
+
+    for shop_key, all_shop_name in shop_data.items():
+        for name_to_detect in all_shop_name:
+            if name_to_detect in place.lower(): return shop_key
+    return False
+
+
+def data_all_objects_from_id(shop_id):
+    table = sqlite3.connect("BDD/odyssee_shop.db")
+    c = table.cursor()
+
+    answer = c.execute(
+        f"""
+        SELECT magasins.nom, types.description, objets.nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids  FROM types, objets 
+        JOIN magasins ON magasins.id = magasin 
+        WHERE magasin = {shop_id}")
+        """).fetchall()
+    table.close()
+    return answer
+
+
+def data_get_object(object_name, shop_name=None):
+    table = sqlite3.connect("BDD/odyssee_shop.db")
+    c = table.cursor()
+
+    object_name = data_search_by_name(object_name, shop_name)
+
+    answer = c.execute(f"""
+        SELECT objets.nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type  FROM objets
+        WHERE objets.nom = "{object_name}"
+        """
+        ).fetchall()
+    table.close()
+    if answer: return answer[0]
+    return None
+
+
+def data_search_by_name(object_name, shop_name=None):
+    table = sqlite3.connect("BDD/odyssee_shop.db")
+    c = table.cursor()
+
+    if shop_name:
+        shop_name = data_shop_name(shop_name)
+        database = c.execute(f"SELECT objets.nom FROM objets JOIN magasins on magasins.id = objets.magasin WHERE magasins.nom = \"{shop_name}\"").fetchall()
+    else:
+        database = c.execute("SELECT nom FROM objets").fetchall()
+    table.close()
+
+    object_name = object_name.lower()
+    match = {len(name[0]): name[0] for name in database if name[0] in object_name}
+
+    if match: return match[max(match.keys())]
+    return None
+
+
+def data_get_shop_id(shop_name):
+    table = sqlite3.connect("BDD/odyssee_shop.db")
+    c = table.cursor()
+
+    answer = c.execute(f"SELECT id FROM magasins WHERE nom = \"{shop_name}\"").fetchall()
+    table.close()
+    return answer
+
+
+def data_get_all_objects(shop_name):
+    shop_id = data_get_shop_id(data_shop_name(shop_name))[0][0]
+    table = sqlite3.connect("BDD/odyssee_shop.db")
+    c = table.cursor()
+
+    answer = c.execute(f"""
+        SELECT objets.nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type FROM objets
+        JOIN magasins ON id = magasin
+        WHERE id = {shop_id}
+        """
+        ).fetchall()
+
+    table.close()
+    return answer
+
+
+
+# object_stat = id du magasin, id du type, nom, courage, force, habileté, rapidité, défense, vie, mana, argent, poids
+def data_add_object(object_stat):
+    table = sqlite3.connect("BDD/odyssee_shop.db")
+    c = table.cursor()
+
+    object_stat[10] = -abs(object_stat[10])
+
+    request = f"INSERT INTO objets VALUES ("
+    for index, i in enumerate(object_stat):
+        if index == 2: request += f"\"{i.lower()}\", "
+        else: request += f"{i}, "
+    request = request[:-2] + ")"
+
+    c.execute(request)
+    table.commit()
+    table.close()
