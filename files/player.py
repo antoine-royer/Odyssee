@@ -37,7 +37,9 @@ def object_stat(object_name, shop_name=None):
     if object_stat:
         return object_stat[0], object_stat[1: -1], object_stat[-1]
     else:
-        return "", [0 for _ in range(8)], -1
+        stat = [0 for _ in range(8)]
+        stat.append(1)
+        return "", stat, -1
 
 # --- get the power --- #
 
@@ -64,7 +66,7 @@ class Player:
 
         if stat: self.stat = stat
         else: self.stat = stat_gen()
-        self.max_weight = 10 * self.stat[1]
+        self.max_weight = 5 * (self.stat[1] + 1)
         
         if inventory: self.inventory = inventory
         else: self.inventory = list()
@@ -110,7 +112,7 @@ class Player:
             name, stat, stockable = object_stat(item[0])
             if (stockable == -1 and item[0] == object_name) or name == object_name: 
                 return index, stat, stockable
-        return -1, -1, -1
+        return -1, -1, ref_check
 
     def find_by_type(self, *object_type):
         for item in self.inventory:
@@ -131,26 +133,30 @@ class Player:
     def object_add(self, object_name):
         index = self.have(object_name)[0]
         _, stat, stockable = object_stat(object_name)
-        if stockable != 2: self.stat[8] += stat[8]
-        if stockable in (1, 5):           
+        if stockable in (1, 5):
+            self.stat[8] += stat[8]         
             if index + 1:
                 self.inventory[index][1] += 1
             else:
                 self.inventory.append([object_name, 1])
-            return True
         else:
             if stockable != 2: self.inventory.append([object_name, -1])
-            if stockable == 0: self.stat_add(stat)
+            if stockable in (-1, 0):
+                self.stat_add(stat)
+                self.stat[8] += stat[8]
 
     def object_del(self, object_name):
         index, stat, stockable = self.have(object_name)
-        self.stat[8] -= stat[8]
+        print(stockable)
         if stockable in (1, 5):
+            self.stat[8] -= stat[8]
             self.inventory[index][1] -= 1
             if self.inventory[index][1] <= 0: self.inventory.pop(index)
         else:
             self.inventory.pop(index)
-            if stockable == 0: self.stat_sub(stat)
+            if stockable in (-1, 0):
+                self.stat_sub(stat)
+                self.stat[8] -= stat[8]
 
     def object_use(self, object_name):
         index, stat, _ = self.have(object_name)

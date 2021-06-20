@@ -9,7 +9,8 @@ def data_shop_name(place):
         "tannerie": ["maroquinerie", "tannerie"],
         "écurie": ["écurie", "haras"],
         "port": ["port"],
-        "librairie": ["librairie", "bouquiniste", "libraire", "bibliothèque"]
+        "librairie": ["librairie", "bouquiniste", "libraire", "bibliothèque"],
+        "orfèvre": ["orfèvre", "bijoutier"]
     }
 
     for shop_key, all_shop_name in shop_data.items():
@@ -39,7 +40,7 @@ def data_get_object(object_name, shop_name=None):
     object_name = data_search_by_name(object_name, shop_name)
 
     answer = c.execute(f"""
-        SELECT objets.nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type  FROM objets
+        SELECT objets.nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type FROM objets
         WHERE objets.nom = "{object_name}"
         """
         ).fetchall()
@@ -75,21 +76,23 @@ def data_get_shop_id(shop_name):
     return answer
 
 
-def data_get_all_objects(shop_name):
-    shop_id = data_get_shop_id(data_shop_name(shop_name))[0][0]
+def data_get_all_objects(shop_name=None):
     table = sqlite3.connect("BDD/odyssee_shop.db")
     c = table.cursor()
 
-    answer = c.execute(f"""
-        SELECT objets.nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type FROM objets
-        JOIN magasins ON id = magasin
-        WHERE id = {shop_id}
-        """
-        ).fetchall()
+    if shop_name:
+        shop_id = data_get_shop_id(data_shop_name(shop_name))[0][0]
+        answer = c.execute(f"""
+            SELECT objets.nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type FROM objets
+            JOIN magasins ON id = magasin
+            WHERE id = {shop_id}
+            """
+            ).fetchall()
+    else:
+        answer = c.execute("SELECT nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type FROM objets").fetchall()
 
     table.close()
     return answer
-
 
 
 # object_stat = id du magasin, id du type, nom, courage, force, habileté, rapidité, défense, vie, mana, argent, poids

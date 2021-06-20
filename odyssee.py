@@ -1,5 +1,5 @@
 # --------------------------------------------------
-# Odyssée (Version 4.0)
+# Odyssée (Version 4.1)
 # by Sha-chan~
 # last version released on the June 20 2021
 #
@@ -232,14 +232,14 @@ def stat(message):
     answer.color = info[12]
     if info[16]: answer.thumbnail.url = info[16]
 
-    for index, capacity_name in enumerate(("Courage", "Force", "Habileté", "Rapidité", "Défense")):
-        answer.add_field(name=capacity_name, value=info[3 + index], inline=True)
+    capacities = ""
+    for index, capacity_name in enumerate(("Courage .", "Force ...", "Habileté ", "Rapidité ", "Défense .")):
+        capacities += f"`{capacity_name}.: {info[3 + index]}`\n"
 
-    answer.add_field(name="Poids", value=f"{info[11]} / {10 * info[4]}", inline=True)
-    answer.add_field(name="Mana", value=info[9], inline=True)
-    answer.add_field(name="Vie", value=info[8], inline=True)
-    answer.add_field(name="Argent", value=info[10], inline=True)
-    
+    misc = f"`Vie ....: {info[8]} PV`\n`Mana ...: {info[9]}`\n`Argent .: {info[10]} Drachmes`\n`Poids ..: {info[11]} / {5 * (info[4] + 1)}`"
+
+    answer.add_field(name="Capacités", value=capacities, inline=True)
+    answer.add_field(name="Divers", value=misc, inline=True)
     answer.add_field(name="Lieu", value=info[13], inline=True)
 
     if len(info[14]):
@@ -251,7 +251,7 @@ def stat(message):
         answer.add_field(name="Inventaire", value="< vide >", inline=True)
     
     if info[15][0][0]:
-        note = "\n".join([f"{i[0]} - {i[1]}" for i in info[15]])
+        note = "\n".join([f"`{i[0]} - {i[1]}`" for i in info[15]])
     else:
         note = "< aucune >"
 

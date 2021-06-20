@@ -123,7 +123,7 @@ class Command:
     def player_list(self, message):
         if get_user(message)[1] not in self.players:
             return f"*Erreur : {get_user(message)[0]} n'existe pas.*", -1
-        return [[self.players[player_id].name, self.players[player_id].species, self.players[player_id].place, self.players[player_id].get_level(), player_id] for player_id in self.players], self.players[get_user(message)[1]].stat[8]
+        return [[self.players[player_id].name, self.players[player_id].species, self.players[player_id].place, self.players[player_id].get_level(), player_id] for player_id in self.players], self.players[get_user(message)[1]].stat[9]
 
     def player_new(self, message):
         user = get_user(message)
