@@ -1,7 +1,7 @@
 # --------------------------------------------------
-# Odyssée (Version 4.1)
+# Odyssée (Version 4.1.1)
 # by Sha-chan~
-# last version released on the June 20 2021
+# last version released on the June 21 2021
 #
 # code provided with licence :
 # GNU General Public Licence v3.0
@@ -17,6 +17,7 @@ with open("config.json", "r") as file:
     config = json.load(file)
 
 odyssee = Handler(config["TOKEN"], config["PREFIX"])
+
 player_file, kick_file, server_id, cmnd = {}, [], 0, None
 
 
@@ -249,13 +250,22 @@ def stat(message):
         answer.add_field(name="Inventaire", value=object_in_inventory, inline=True)
     else:
         answer.add_field(name="Inventaire", value="< vide >", inline=True)
-    
+
+    if info[17]:
+        powers_name = data_powers() 
+        for i in info[17]:
+            powers = f" ❖ {powers_name[i][0]}\n"
+    else:
+        powers = "< aucun >"
+    answer.add_field(name="Pouvoirs", value=powers, inline=True)
+
     if info[15][0][0]:
         note = "\n".join([f"`{i[0]} - {i[1]}`" for i in info[15]])
     else:
         note = "< aucune >"
 
     answer.add_field(name="Notes", value=note, inline=True)
+
     message.channel.send(embed = answer.to_json())
 
 
@@ -373,6 +383,7 @@ def temps(message):
 # --- Administration --- #
 
 @odyssee.command
+@check_server_id
 def sauvegarde(message):
     cmnd.save()
     message.channel.send(f"Partie sauvegardée.\n\n**Fichier local**\n{save_read()}")
@@ -380,6 +391,7 @@ def sauvegarde(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def charger(message):
     message.channel.send(cmnd.load(message))
     init_game()
@@ -387,6 +399,7 @@ def charger(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def modifier(message):
     message.channel.send(cmnd.player_modify(message))
     cmnd.save()
@@ -394,12 +407,14 @@ def modifier(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def ajout_objet(message):
     message.channel.send(cmnd.bdd_object_add(message))
 
 
 @odyssee.command
 @check_admin
+@check_server_id
 def joueur_plus(message):
     message.channel.send(cmnd.player_create(message))
     cmnd.save()
@@ -407,6 +422,7 @@ def joueur_plus(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def joueur_moins(message):
     message.channel.send(cmnd.player_delete(message))
     cmnd.save()
@@ -414,6 +430,7 @@ def joueur_moins(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def kick(message):
     message.channel.send(cmnd.player_kick(message))
     cmnd.save()
@@ -421,6 +438,7 @@ def kick(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def unkick(message):
     message.channel.send(cmnd.player_unkick(message))
     cmnd.save()
@@ -428,6 +446,7 @@ def unkick(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def formatage_kick(message):
     message.channel.send(cmnd.clear_kick(message))
     cmnd.save()
@@ -435,6 +454,7 @@ def formatage_kick(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def formatage_joueur(message):
     message.channel.send(cmnd.clear_player(message))
     cmnd.save()
@@ -442,6 +462,7 @@ def formatage_joueur(message):
 
 @odyssee.command
 @check_admin
+@check_server_id
 def formatage(message):
     message.channel.send(cmnd.clear_all(message))
     init_game()

@@ -274,13 +274,13 @@ class Command:
     
                 if not target.isalive():
                     inventory = target.inventory[:]
-                    result += f"\n**Butin**\n__{player.name}__ fouille le cadavre et récupère :\n - {target.stat[7]} Drachmes."
+                    result += f"\n**Butin**\n__{player.name}__ fouille le cadavre et récupère :\n ❖ {target.stat[7]} Drachmes."
                     if inventory:
-                        result += f"\n - " + "\n - ".join([item[0] + ('', f' ({item[1]})')[item[1] != -1] for item in inventory])
+                        result += f"\n ❖ " + "\n ❖ ".join([item[0] + ('', f' ({item[1]})')[item[1] != -1] for item in inventory])
                         for item in inventory:
                             if item[1] != -1:
                                 for _ in range(item[1]): player.object_add(item[0])
-                            else: player.object_add(item[0])
+                            elif player.have(item[0])[0] == -1: player.object_add(item[0])
 
                     player.stat[7] += target.stat[7]
                     self.players.pop(target.id)
@@ -298,13 +298,13 @@ class Command:
                 if wpn_type == 4:
                     enemy_bullet = enemy.find_by_type(5)[0]
                     if not enemy_bullet:
-                        return enemy_wpn[0], [0 for _ in range(8)], "", False
+                        return enemy_wpn[0], [0 for _ in range(9)], "", False
                     else:
                         return enemy_wpn[0], enemy_wpn[1], enemy_bullet, True
                 else:
                     return enemy_wpn[0], enemy_wpn[1], "", True
             else:
-                return "mains nues", [0 for _ in range(8)], "", wpn_type == 3
+                return "mains nues", [0 for _ in range(9)], "", wpn_type == 3
 
         def melee_fight(user, enemy):
             if phase_1(user, enemy):
@@ -374,7 +374,16 @@ class Command:
         else: result += f"__{enemy.name}__ ne peut pas riposter.\n"
 
         user.stat_add(user_weapon[1])
+        user_overweight = False
+        if user.stat[8] > user.max_weight:
+            user_overweight = True
+            user.stat[1] -= (user.stat[8] - user.max_weight)
+
         enemy.stat_add(enemy_weapon_stat)
+        enemy_overweight = False
+        if enemy.stat[8] > enemy.max_weight:
+            enemy_overweight = True
+            enemy.stat[1] -= (enemy.stat[8] - enemy.max_weight)
         
         result += f"\n**Capacités**\nLes capacités temporaires sont :\n({user.name} | {enemy.name})\n"
 
@@ -386,7 +395,7 @@ class Command:
         result += "\n\n**Combat**\n"
 
         if user_weapon[2] == 4:
-            fight = ranged_fight(user, enemy, enemy_arrow, ripost)
+            fight = ranged_fight(user, enemy, (user_arrow, enemy_arrow), ripost)
         else:
             fight = melee_fight(user, enemy)
 
@@ -394,7 +403,12 @@ class Command:
 
         if not fight[1]: result += f"\n**Points de vie restant**\n - __{user.name}__ : {user.stat[5]} Pv restant\n - __{enemy.name}__ : {enemy.stat[5]} Pv restant"
         
+        if user_overweight:
+            user.stat[1] += (user.stat[8] - user.max_weight)
         user.stat_sub(user_weapon[1])
+
+        if enemy_overweight:
+            enemy.stat[1] += (enemy.stat[8] - enemy.max_weight)
         enemy.stat_sub(enemy_weapon_stat)
 
         return result

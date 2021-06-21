@@ -1,4 +1,4 @@
-# Statistiques : Courage (0), Force (1), Habileté (2), Rapidité (3) Défense (4), Vie (5), Mana (6), Argent (7), Poids porté(8), Couleur (9)
+# Statistiques : Courage (0), Force (1), Habileté (2), Rapidité (3) Défense (4), Vie (5), Mana (6), Argent (7), Poids porté (8), Couleur (9)
 
 from random import randint
 from files.shop import *
@@ -96,7 +96,7 @@ class Player:
         else: return 0
 
     def get_stat(self):
-        return [self.name, self.species, self.get_level()] + self.stat + [self.place, self.inventory, self.note, self.avatar]
+        return [self.name, self.species, self.get_level()] + self.stat + [self.place, self.inventory, self.note, self.avatar, self.power]
 
     def inshop(self):
         return data_shop_name(self.place)
@@ -133,30 +133,26 @@ class Player:
     def object_add(self, object_name):
         index = self.have(object_name)[0]
         _, stat, stockable = object_stat(object_name)
-        if stockable in (1, 5):
-            self.stat[8] += stat[8]         
+        self.stat[8] += stat[8]
+        if stockable in (1, 5):         
             if index + 1:
                 self.inventory[index][1] += 1
             else:
                 self.inventory.append([object_name, 1])
         else:
             if stockable != 2: self.inventory.append([object_name, -1])
-            if stockable in (-1, 0):
-                self.stat_add(stat)
-                self.stat[8] += stat[8]
+            if stockable == 0: self.stat_add(stat)
 
     def object_del(self, object_name):
         index, stat, stockable = self.have(object_name)
-        print(stockable)
+        self.stat[8] -= stat[8]
+
         if stockable in (1, 5):
-            self.stat[8] -= stat[8]
             self.inventory[index][1] -= 1
             if self.inventory[index][1] <= 0: self.inventory.pop(index)
         else:
             self.inventory.pop(index)
-            if stockable in (-1, 0):
-                self.stat_sub(stat)
-                self.stat[8] -= stat[8]
+            if stockable == 0: self.stat_sub(stat)
 
     def object_use(self, object_name):
         index, stat, _ = self.have(object_name)

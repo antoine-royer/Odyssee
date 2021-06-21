@@ -7,7 +7,7 @@ def data_shop_name(place):
         "forge": ["forge", "armurerie"],
         "officine": ["pharmacie", "herboristerie", "officine", "apothicairerie"],
         "tannerie": ["maroquinerie", "tannerie"],
-        "écurie": ["écurie", "haras"],
+        "écurie": ["écurie", "haras", "étables", "ferme", "mesnie"],
         "port": ["port"],
         "librairie": ["librairie", "bouquiniste", "libraire", "bibliothèque"],
         "orfèvre": ["orfèvre", "bijoutier"]
