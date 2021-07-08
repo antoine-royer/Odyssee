@@ -1,5 +1,3 @@
-*.txt
 *.json
-__pycache__/*
-files/__pycache__/*
-
+*.txt
+libs/__pycache__
