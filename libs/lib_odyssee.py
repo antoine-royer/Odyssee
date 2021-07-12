@@ -1,5 +1,7 @@
 from math import ceil
 from random import randint
+import requests
+from bs4 import BeautifulSoup
 from libs.players import *
 from libs.travel import *
 
@@ -55,6 +57,11 @@ def get_avg_level(data_player):
             total += 1
 
     return ceil(level / total)
+
+
+def get_categories():
+    cat = requests.get("https://www.nomsdefantasy.com/").text
+    return ", ".join([cat.get("id") for cat in BeautifulSoup(cat, features="html5lib").find_all("input", {"name": "type"})])
 
 
 # --- Fonctions de combats --- #

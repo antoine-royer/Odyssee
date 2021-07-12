@@ -581,11 +581,23 @@ class OdysseeCommands(commands.Cog):
             await ctx.send(embed=embed)
 
 
-    @commands.command()
+    @commands.command(help=f"Génère une liste de noms aléatoire selon une catégorie donnée parmi la liste : {get_categories()}.", brief="Génère des noms aléatoire")
     @commands.check(server_id)
-    async def nom(self, ctx, categorie: str, nombre: int=1):
-        pass
-    # Générateur de nom
+    async def nom(self, ctx, categorie: str="human", nombre: int=1):
+        player = self.get_player_from_id(ctx.author.id)
+        if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
+
+        categorie = categorie.lower()
+
+        if nombre <= 0: nombre = 1
+        elif nombre > 10: nombre = 10
+
+        names = requests.get(f"https://www.nomsdefantasy.com/{categorie}/medium").text
+        names = [names.contents[0] for names in BeautifulSoup(names, features="html5lib").find_all("li")]
+        
+        embed = discord.Embed(title="Générateur de nom", description=f"Nom{('', 's')[nombre > 1]} '{categorie}' au hasard", color=player.stat[9])
+        embed.add_field(name="Noms", value=" ❖ " + "\n ❖ ".join(names[:nombre]))
+        await ctx.send(embed=embed)
 
 
     @commands.command(help="Commencer ou continuer un combat. Précisez le nom de l'adversaire et l'arme utilisée.", brief="Combattre")
