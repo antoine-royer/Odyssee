@@ -87,8 +87,7 @@ class Player:
     def have(self, object_name): # Renvoie : (index, Object), Object.type = -1 si l'objet est inconnu ; index = -1 si l'objet n'est pas possédé
         object_name = get_official_name(object_name, True)
         for index, obj in enumerate(self.inventory):
-            name = get_official_name(obj.name, True)
-            if object_name == name:
+            if object_name == obj.official_name:
                 return index, obj
 
         return -1, get_object(object_name)

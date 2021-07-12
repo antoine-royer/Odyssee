@@ -585,9 +585,10 @@ class OdysseeCommands(commands.Cog):
     @commands.check(server_id)
     async def nom(self, ctx, categorie: str, nombre: int=1):
         pass
+    # Générateur de nom
 
 
-    @commands.command()
+    @commands.command(help="Commencer ou continuer un combat. Précisez le nom de l'adversaire et l'arme utilisée.", brief="Combattre")
     @commands.check(server_id)
     async def combat(self, ctx, adversaire: str, arme: str=None):
         player = self.get_player_from_id(ctx.author.id)
@@ -595,11 +596,16 @@ class OdysseeCommands(commands.Cog):
 
         # Verification de l'existence de la cible, et création d'icelle dans le cas échéant
         target = self.get_player_from_name(adversaire)
+
         if not target:
             new_player_id = -len(self.data_player)
+            level = get_avg_level(self.data_player)
             stat = stat_gen([1 for _ in range(4)], randint(level, 2 * level), True)
             self.data_player.update({new_player_id : Player(new_player_id, adversaire, "Ennemi", "", stat, player.place)})
             self.save_game()
+
+            await ctx.send(f"__{player.name}__ se prépare à combattre __{adversaire}__.")
+            return
 
         # Vérification de l'arme du joueur
         if arme:
@@ -612,6 +618,7 @@ class OdysseeCommands(commands.Cog):
 
             # si c'est une arme connue
             elif player_weapon.object_type in (3, 4):
+
                 # arme de mêlée => même lieu
                 if player_weapon.object_type == 3 and target.place != player.place:
                     await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit")
@@ -628,16 +635,23 @@ class OdysseeCommands(commands.Cog):
 
             # si il s'agit d'un objet quelconque
             else:
-                player_weapon = Object("", [int(i == 8) for i in range(9)], -1, -1)
+                player_weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
+        
+        else:
+            if target.place != player.place:
+                await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit")
+                return
+            else: player_weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
+
 
         player.stat_add(player_weapon.stat)
 
 
         # Arme de l'adversaire
         target_weapon = target.select_object_by_type(3, 4)
-        can_fight = True
+        target_can_fight = True
 
-        if target_weapon == -1: target_weapon = Object("", [int(i == 8) for i in range(9)], -1, -1)
+        if target_weapon == -1: target_weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
         else: target_weapon = target.inventory[target_weapon]
         
         if target_weapon.object_type == 4:
@@ -645,33 +659,66 @@ class OdysseeCommands(commands.Cog):
             if index != -1:
                 target.inventory[index].quantity -= 1
             else:
-                can_fight = False
+                target_can_fight = False
 
         elif target.place != player.place:
-            can_fight = False
+            target_can_fight = False
 
         target.stat_add(target_weapon.stat)
 
         # Qui commence
-        fighters = phase_1(player, target)
+        fighters, target_index = phase_1(player, target)
 
-        # Est-ce que le coup porte
-        if phase_2(fighters[0]):
-            phase_3(fighters)
+        message = ""
 
-        # riposte
-        if fighters[1].isalive():
-            fighters = (fighters[1], fighters[0])
+        for attacker in range(2):
+            defender = (attacker + 1) % 2
 
-            if phase_2(fighters[0]):
-                phase_3(fighters)
+            turn = True
+            if attacker == target_index and not target_can_fight:
+                message += f"__{fighters[target_index].name}__ ne peut pas se battre.\n"
+                turn = False
 
-            if not fighters[1].isalive():
+            if turn:
+                message += f"__{fighters[attacker].name}__ attaque"
 
-        else:
-            fighters[0].stat[7] += fighters[1].stat[7]
-            for obj in fighters[1].inventory:
-                fighters[0].object_add(obj.name, obj.quantity)
+                if phase_2(fighters[attacker]):
+                    message += " et touche sa cible.\n"
+
+                    damage = phase_3(fighters, attacker, defender)
+                    if damage:
+                        message += f"__{fighters[defender].name}__ subit {damage} point de dégâts.\n"
+                    else:
+                        message += f"__{fighters[defender].name}__ esquive le coup.\n"
+
+                    end = False
+                    if not fighters[defender].isalive():
+                        loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
+                        if fighters[defender].stat[7]:
+                           loot += f" ❖ {fighters[defender].stat[7]} Drachme{('', 's')[fighters[defender].stat[7] > 1]}\n"
+
+                        fighters[attacker].stat[7] += fighters[defender].stat[7]
+                        
+                        for obj in fighters[defender].inventory:
+                            check = fighters[attacker].object_add(obj.name, obj.quantity)
+                            if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
+
+                        self.data_player.pop(fighters[defender].id)
+
+                        message += loot
+                        end = True
+                else:
+                    message += f" et manque sa cible.\n"
+
+            await ctx.send(message)
+            if end: break
+
+        player.stat_sub(player_weapon.stat)
+        target.stat_sub(target_weapon.stat)
+
+        self.save_game()
+
+
 
 
 

@@ -5,15 +5,16 @@ import sqlite3
 
 
 class Object:
-    def __init__(self, name, stat, object_type, shop_id, quantity=-1):
+    def __init__(self, name, official_name, stat, object_type, shop_id, quantity=-1):
         self.name = name
+        self.official_name = official_name
         self.stat = stat
         self.object_type = object_type
         self.shop_id = shop_id
         self.quantity = quantity
 
     def export(self):
-        return self.name, self.stat, self.object_type, self.shop_id, self.quantity
+        return self.name, self.official_name, self.stat, self.object_type, self.shop_id, self.quantity
 
 
 
@@ -49,9 +50,9 @@ def get_object(object_name, shop_id=None):
 
     if database:
         database = database[0]
-        return Object(database[0], database[1: -2], database[-2], database[-1]) 
+        return Object(object_name, database[0], database[1: -2], database[-2], database[-1]) 
     else:
-        return Object(object_name, [int(i == 8) for i in range(9)], -1, -1)
+        return Object(object_name, object_name, [int(i == 8) for i in range(9)], -1, -1)
 
 
 def get_official_name(object_name, return_entry=False):
@@ -82,7 +83,7 @@ def get_object_by_shop(shop_id):
         """).fetchall()
     table.close()
 
-    return [Object(i[0], i[1:-2], i[-2], i[-1]) for i in database]
+    return [Object(i[0], i[0], i[1:-2], i[-2], i[-1]) for i in database]
 
 
 def get_type_by_id(type_id):
