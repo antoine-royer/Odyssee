@@ -30,7 +30,7 @@ def get_species_id(species_name):
         if species_name in species[1].split(" ; "):
             return species[0]
 
-        return -1
+    return -1
 
 
 def get_species(species_name):

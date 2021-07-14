@@ -200,10 +200,18 @@ class AdminCommands(commands.Cog):
     @commands.check(is_admin)
     async def charger(self, ctx, sauvegarde: str):
         global guild_id
-        data_player, data_kick, guild_id = eval(sauvegarde)
-        self.data_player = {player[0]: Player(*player) for player in data_player}
-        self.data_kick = data_kick
+        self.data_player.clear()
+        self.data_kick.clear()
 
+        data_player, data_kick, guild_id = eval(sauvegarde)
+        
+        for player in data_player:
+            self.data_player.update({player[0]: Player(*player)})
+
+        for i in data_kick:
+            self.data_kick.append(i)
+
+        await ctx.send("Partie chargée.")
         self.save_game()
 
 
@@ -233,7 +241,7 @@ class AdminCommands(commands.Cog):
         table.commit()
         table.close()
 
-        await ctx.send("L'objet : '{nom}' a été ajouté à la base de données.")
+        await ctx.send(f"L'objet : '{nom}' a été ajouté à la base de données.")
 
 
 
