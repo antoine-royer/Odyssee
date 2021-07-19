@@ -348,7 +348,7 @@ class OdysseeCommands(commands.Cog):
         self.save_game()
 
 
-    @commands.command(name="dé", help="Lancer un dé. Le premier paramètre est le nombre de faces du dé (< 4), le second est le nombre de dés lancés. Les deux paramètres sont optionnels, par défault, un dé à 20 faces est lancé.", brief="Lancer un dé")
+    @commands.command(name="dé", help="Lancer un dé. Le premier paramètre est le nombre de faces du dé (> 3), le second est le nombre de dés lancés. Les deux paramètres sont optionnels, par défault, un dé à 20 faces est lancé.", brief="Lancer un dé")
     @commands.check(server_id)
     async def de(self, ctx, faces: int=20, nombre: int=1):
         player = self.get_player_from_id(ctx.author.id)
@@ -729,6 +729,28 @@ class OdysseeCommands(commands.Cog):
         target.stat_sub(target_weapon.stat)
 
         self.save_game()
+
+
+    @commands.command(help="Vous permet de vous reposer lorsque vous dormez dehors.", brief="Dormir")
+    @commands.check(server_id)
+    async def dormir(self, ctx):
+        player = self.get_player_from_id(ctx.author.id)
+        if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
+
+        places = [player.place for player in self.data_player.values() if player.identifier < 0]
+        if player.place in places:
+            await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis à proximité")
+            return
+
+        if player.stat[5] < 100:
+            player.stat[5] += 5
+            if player.stat[5] > 100: player.stat[5] = 100
+
+        if player.stat[6] < 5:
+            player.stat[6] += 1
+            if player.stat[6] > 5: player.stat[6] = 5
+
+        await ctx.send(f"__{player.name}__ dort.")
 
 
 

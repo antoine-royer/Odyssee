@@ -1,13 +1,12 @@
 # --------------------------------------------------
-# Odyssée (version 5.0.1)
+# Odyssée (version 5.0.2)
 # by Sha-chan~
-# last modification on July 13, 2021
+# last modification on July 19, 2021
 #
 # code provided with licence :
 # GNU General Public Licence v3.0
 # --------------------------------------------------
 
-# [odyssee.py] > commands.py > lib_odyssee.py > objects.py > shop.py
 
 import json
 import discord

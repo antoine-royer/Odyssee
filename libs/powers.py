@@ -63,7 +63,10 @@ def get_default_power(species_name):
     """).fetchall()
     table.close()
 
-    return Power(*database[0])
+    if database:
+        return Power(*database[0])
+    else:
+        return None
 
 
 def get_power_by_id(power_id):

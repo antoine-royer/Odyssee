@@ -122,15 +122,13 @@ class AdminCommands(commands.Cog):
         
         if capacite in capacities:
             player.stat[capacities.index(capacite)] += valeur
-
-            valeur = abs(valeur) 
             
             if capacite != "argent":
-                msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {valeur} point{('', 's')[valeur > 1]}"
+                msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} point{('', 's')[abs(valeur) > 1]} "
                 if capacite == "habileté": msg += "d'Habileté"
                 else: msg += f"de {capacite.capitalize()}"
             else:
-                msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {valeur} Drachme{('', 's')[valeur > 1]}"
+                msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} Drachme{('', 's')[abs(valeur) > 1]}"
             
             await ctx.send(msg)
 
