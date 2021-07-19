@@ -737,9 +737,9 @@ class OdysseeCommands(commands.Cog):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        places = [player.place for player in self.data_player.values() if player.identifier < 0]
+        places = [player.place for player in self.data_player.values() if player.id < 0]
         if player.place in places:
-            await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis à proximité")
+            await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis potentiels à proximité")
             return
 
         if player.stat[5] < 100:
@@ -751,47 +751,3 @@ class OdysseeCommands(commands.Cog):
             if player.stat[6] > 5: player.stat[6] = 5
 
         await ctx.send(f"__{player.name}__ dort.")
-
-
-
-
-
-
-            
-
-
-            
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-# To do : 
-# - combat
-# - génération de nom
-
-
-
-
-
-
-
-
