@@ -82,9 +82,9 @@ class AdminCommands(commands.Cog):
         if self.get_player_from_name(nom):
             await send_error(ctx, f"le joueur : '{nom}' existe déjà")
         else:
-            new_player_id = -len(self.data_player)
+            new_player_id = -(len(self.data_player) + 1)
             
-            stat = stat_gen([1 for _ in range(4)], randint(level, 2 * level), True)
+            stat = stat_gen([1 for _ in range(4)], randint(1, level + 2), True)
 
             self.data_player.update({new_player_id : Player(new_player_id, nom, espece, '', stat)})
             await ctx.send(f"{nom}, un(e) {espece}, est apparu(e).")

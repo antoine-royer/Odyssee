@@ -6,7 +6,7 @@ def get_travel_mean(mean_name):
     table = sqlite3.connect("BDD/odyssee_travel.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT km_heure, heures_par_jour, mer FROM moyens_transport WHERE nom = \"{mean_name.lower()}\"").fetchall()
+    database = c.execute(f"SELECT km_heure, par_jour, mer FROM moyens_transport WHERE nom = \"{mean_name.lower()}\"").fetchall()
     table.close()
 
     if database:
@@ -58,7 +58,7 @@ def get_landtype(landtype_name):
     if database:
         return database[0]
     else:
-        return -1, -1, -1
+        return None
 
 
 def get_all_landtype():

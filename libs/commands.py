@@ -556,7 +556,7 @@ class OdysseeCommands(commands.Cog):
         per_hour, per_day, on_sea = get_travel_mean(moyen_transport)
         weather = get_weather(meteo)[on_sea]
 
-        if per_hour == -1:
+        if -1 in (per_hour, per_day, on_sea):
             await send_error(ctx, "moyen de transport inconnu"); return
         if weather == -1:
             await send_error(ctx, "météo inconnue"); return
@@ -570,12 +570,13 @@ class OdysseeCommands(commands.Cog):
             await ctx.send(embed=embed)
 
         else:
+            terrain = get_landtype(terrain)
             if not terrain: await send_error(ctx, "terrain inconnu"); return
 
             embed = discord.Embed(title="Temps", description=f"Temps nécessaire pour parcourir {distance} km", color=8421504)
             land_name = ("Sur une route", "Sur un chemin", "Hors piste")
 
-            for index, land_type in enumerate(get_landtype(terrain)):
+            for index, land_type in enumerate(terrain):
                 embed.add_field(name=land_name[index], value=f"`jour(s) ..: {int(distance // (per_day * land_type))}`\n`heure(s) .: {int(distance % (per_day * land_type) // per_hour)}`", inline=False)
 
             await ctx.send(embed=embed)
@@ -610,9 +611,9 @@ class OdysseeCommands(commands.Cog):
         target = self.get_player_from_name(adversaire)
 
         if not target:
-            new_player_id = -len(self.data_player)
+            new_player_id = -(len(self.data_player) + 1)
             level = get_avg_level(self.data_player)
-            stat = stat_gen([1 for _ in range(4)], randint(level, 2 * level), True)
+            stat = stat_gen([1 for _ in range(4)], randint(1, level + 2), True)
             self.data_player.update({new_player_id : Player(new_player_id, adversaire, "Ennemi", "", stat, player.place)})
             self.save_game()
 
@@ -701,7 +702,7 @@ class OdysseeCommands(commands.Cog):
                     if damage:
                         message += f"__{fighters[defender].name}__ subit {damage} point de dégâts.\n"
                     else:
-                        message += f"__{fighters[defender].name}__ esquive le coup.\n"
+                        message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
 
                     end = False
                     if not fighters[defender].isalive():
@@ -722,8 +723,9 @@ class OdysseeCommands(commands.Cog):
                 else:
                     message += f" et manque sa cible.\n"
 
-            await ctx.send(message)
             if end: break
+
+        await ctx.send(message)
 
         player.stat_sub(player_weapon.stat)
         target.stat_sub(target_weapon.stat)
