@@ -99,7 +99,7 @@ class AdminCommands(commands.Cog):
 
         if player_id:
             self.data_player.pop(player_id)
-            await ctx.send(f"Le joueur : '{nom}' a été supprimé.")
+            await ctx.send(f"Le joueur : __{nom}__ a été supprimé.")
 
             self.save_game()
         else:
