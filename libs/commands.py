@@ -7,8 +7,6 @@ from libs.lib_odyssee import *
 
 
 guild_id = None
-
-
 async def server_id(ctx):
     global guild_id
 
@@ -18,7 +16,6 @@ async def server_id(ctx):
         await send_error(ctx, "Odyssée est utilisé sur un autre serveur")
 
     return guild_id == ctx.guild.id
-
 
 
 class OdysseeCommands(commands.Cog):

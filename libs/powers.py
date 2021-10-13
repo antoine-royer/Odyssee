@@ -3,7 +3,6 @@ import sqlite3
 
 # --- Constructor --- #
 
-
 class Power:
     def __init__(self, name, description, enemy, power_id):
         self.name = name
@@ -16,7 +15,6 @@ class Power:
 
 
 # --- Database gestion --- #
-
 
 def get_species_id(species_name):
     table = sqlite3.connect("BDD/odyssee_powers.db")
