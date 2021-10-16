@@ -67,7 +67,7 @@ class AdminCommands(commands.Cog):
                 embed.add_field(name="Erreur : commande inconnue", value=f"Entrez `{self.PREFIX}aide` pour avoir la liste des commandes.")
         
         else:
-            embed = discord.Embed(title="Rubrique des commandes administrateur", description=f"Entrez : `{self.PREFIX}administration <commande>` pour plus d'informations.", color=8421504)
+            embed = discord.Embed(title="Rubrique des commandes administrateur", description=f"Entrez : `{self.PREFIX}aide_admin <commande>` pour plus d'informations.", color=8421504)
             for cmnd in self.get_commands():
                 embed.add_field(name=cmnd.brief, value=get_syntax(cmnd), inline=False)
         await ctx.send(embed=embed)
