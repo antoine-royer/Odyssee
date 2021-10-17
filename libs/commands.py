@@ -210,7 +210,10 @@ class OdysseeCommands(commands.Cog):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        contenu = int_converter(contenu)
+        try:
+            contenu = int(contenu)
+        except:
+            pass
 
         if type(contenu) == str:
             player.add_note(contenu)
@@ -610,7 +613,7 @@ class OdysseeCommands(commands.Cog):
         if not target:
             new_player_id = -(len(self.data_player) + 1)
             level = get_avg_level(self.data_player)
-            stat = stat_gen([1 for _ in range(4)], randint(1, level + 2), True)
+            stat = stat_gen([1 for _ in range(4)], randint(1, int(1.5 * level)), True)
             self.data_player.update({new_player_id : Player(new_player_id, adversaire, "Ennemi", "", stat, player.place)})
             self.save_game()
 

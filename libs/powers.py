@@ -111,7 +111,9 @@ def power_use(power_id):
         eclair,
         protection,
         fatigue,
-        vitesse
+        vitesse,
+        charge,
+        pourfendre,
     )[power_id]
 
 
@@ -237,3 +239,22 @@ def vitesse(user, players, target=None):
     pts = 15 * user.get_level()
     user.capacity_modify(3, pts)
     return f"__{user.name}__ devient plus rapide."
+
+def charge(user, players, target=None):
+    pts = user.stat[1] * 2
+    user.stat[6] += 1
+
+    if target.stat[5] > pts:
+        target.stat[5] -= pts
+        return f"__{user.name}__ se jette sur __{target.name}__."
+    else:
+        return f"__{target.name}__ est trop mal en point."
+
+def pourfendre(user, players, target=None):
+    pts = int(user.stat[2] * 1.5)
+
+    if target.stat[5] > pts:
+        target.stat[5] -= pts
+        return f"__{target.name}__ se fait transpercer."
+    else:
+        return f"__{target.name}__ fait un bond en arrière."

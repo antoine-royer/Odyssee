@@ -222,7 +222,7 @@ class AdminCommands(commands.Cog):
             await ctx.send(f"**Sauvegarde**\n```\n{file.read()}```")
 
 
-    @commands.command(help="Permet d'ajouter un objet au jeu.", brief="Ajouter un objet")
+    @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.", brief="Ajouter un objet")
     @commands.check(is_admin)
     async def ajout_objet(self, ctx, magasin: int, type_objet: int, nom: str, courage: int, force: int, habilete: int, rapidite: int, defense: int, vie: int, mana: int, argent: int, poids: int):
         check = get_official_name(nom)

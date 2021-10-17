@@ -184,15 +184,19 @@ class Player:
 
     def power_sub(self, power_name):
         power = get_power_by_name(power_name)
+        powers_id = [i.power_id for i in self.power]
+
+        # Pouvoir non enregistré
         if not power:
-            # Pouvoir non enregistré
             return 0
-        elif power.power_id not in [i.power_id for i in self.power]:
-            # Pouvoir non possédé
+
+        # Pouvoir non possédé
+        elif power.power_id not in powers_id:
             return 1
+
+        # Succès
         else:
-            self.power.remove(power)
-            # Succès
+            self.power.pop(powers_id.index(power.power_id))
             return 2
 
     def in_shop(self):
