@@ -111,6 +111,16 @@ class OdysseeCommands(commands.Cog):
 
         self.save_game()
 
+    @commands.command(help="Vous permet de mettre à jour votre avatar dans les fichiers du bot si vous en changez.", brief="Mettre à jour son avatar")
+    @commands.check(server_id)
+    async def avatar(self, ctx):
+        player = self.get_player_from_id(ctx.author.id)
+        if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
+
+        player.avatar = str(ctx.author.avatar_url)
+        await ctx.send(f"L'avatar de __{player.name}__ a été mis à jour.")
+        self.save_game()
+
 
     @commands.command(help="Permet de changer son pseudo dans le jeu. Le pseudo utilisé avec Odyssée n'a aucun rapport avec celui du serveur Discord.", brief="Changer de pseudo")
     @commands.check(server_id)
@@ -618,7 +628,7 @@ class OdysseeCommands(commands.Cog):
         if nombre <= 0: nombre = 1
         elif nombre > 10: nombre = 10
 
-        names = requests.get(f"https://www.nomsdefantasy.com/{categorie}/medium").text
+        names = requests.get(f"https://www.nomsdefantasy.com/{categorie}/short").text
         names = [names.contents[0] for names in BeautifulSoup(names, features="html5lib").find_all("li")]
         
         embed = discord.Embed(title="Générateur de nom", description=f"Nom{('', 's')[nombre > 1]} '{categorie}' au hasard", color=player.stat[9])
@@ -684,6 +694,7 @@ class OdysseeCommands(commands.Cog):
 
         # Arme de l'adversaire
         target_can_fight, target_weapon = weapon_select(target)
+        if target_weapon.object_type == 3 and target.place != player.place: target_can_fight = False
 
         player.stat_add(player_weapon.stat)
         target.stat_add(target_weapon.stat)

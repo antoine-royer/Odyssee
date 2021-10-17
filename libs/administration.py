@@ -259,7 +259,12 @@ class AdminCommands(commands.Cog):
         if not player: await send_error(ctx, f"{joueur} n'est pas un joueur enregistré") ; return
         player = self.data_player[player]
 
-        if fighter.place != player.place: await send_error(ctx, f"__{fighter.name}__ et __{player.name}__ ne sont pas au même endroit") ; return
+        fighter, weapon = weapon_select(fighter)
+        if weapon.object_type == 3 and fighter.place != player.place:
+            await send_error(ctx, f"__{fighter.name}__ et __{player.name}__ ne sont pas au même endroit") ; return
+
+        fighter.stat_add(weapon.stat)
+
         message = ""
 
         if phase_2(fighter):
@@ -289,6 +294,7 @@ class AdminCommands(commands.Cog):
 
         else: message += f"__{fighter.name}__ rate son coup."
 
+        fighter.stat_sub(weapon.stat)
         await ctx.send(message)
         self.save_game()
 
