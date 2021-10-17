@@ -106,7 +106,7 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"le joueur : '{nom}' n'existe pas")
 
 
-    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.", brief="Modifier un joueur")
+    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, l'état", brief="Modifier un joueur")
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
         player_id = self.get_player_from_name(nom)
@@ -132,7 +132,6 @@ class AdminCommands(commands.Cog):
             
             await ctx.send(msg)
 
-
         elif capacite == "lieu":
             player.place = valeur
             await ctx.send(f"__{player.name}__ se dirige vers {valeur}.")
@@ -151,6 +150,13 @@ class AdminCommands(commands.Cog):
             if check: await ctx.send(f"__{player.name}__ a perdu l'objet : '{valeur}'{nombre}.")
             else: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{valeur}' ou pas en assez grande quantité")
 
+        elif capacite == "état":
+            etats = ("conscient", "empoisonné", "inconscient", "blessé", "endormi")
+            if valeur in etats:
+                player.state = etats.index(valeur)
+                await ctx.send(f"__{player.name}__ devient {player.get_state()}.")
+            else:
+                send_error(ctx, f"{valeur} n'est pas un identifiant d'état connu")
         self.save_game()
 
 
@@ -226,7 +232,6 @@ class AdminCommands(commands.Cog):
     @commands.check(is_admin)
     async def ajout_objet(self, ctx, magasin: int, type_objet: int, nom: str, courage: int, force: int, habilete: int, rapidite: int, defense: int, vie: int, mana: int, argent: int, poids: int):
         check = get_official_name(nom)
-
         if check: await send_error(f"l'objet : '{nom}' existe déjà"); return
 
         table = sqlite3.connect("odyssee_shop.db")
@@ -241,6 +246,51 @@ class AdminCommands(commands.Cog):
 
         await ctx.send(f"L'objet : '{nom}' a été ajouté à la base de données.")
 
+
+    @commands.command(help="Un joueur se fait attaquer par un PnJ", brief="Attaquer un joueur")
+    @commands.check(is_admin)
+    async def attaque(self, ctx, pnj: str, joueur: str):
+        fighter = self.get_player_from_name(pnj)
+        if not fighter: await send_error(ctx, f"{pnj} n'existe pas") ; return
+        fighter = self.data_player[fighter]
+        if fighter.id > 0 or fighter.state in (2, 4): await send_error(ctx, f"__{pnj}__ n'est pas un PnJ ou n'est pas en état de se battre") ; return
+
+        player = self.get_player_from_name(joueur)
+        if not player: await send_error(ctx, f"{joueur} n'est pas un joueur enregistré") ; return
+        player = self.data_player[player]
+
+        if fighter.place != player.place: await send_error(ctx, f"__{fighter.name}__ et __{player.name}__ ne sont pas au même endroit") ; return
+        message = ""
+
+        if phase_2(fighter):
+            damage = phase_3((fighter, player), 0, 1)
+            message += f"__{fighter.name}__ attaque __{player.name}__.\n"
+
+            if damage:
+                player.stat[5] -= damage
+                message += f"__{player.name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
+
+                if not player.isalive():
+                    loot = f"__{player.name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
+                    if player.stat[7]:
+                       loot += f" ❖ {player.stat[7]} Drachme{('', 's')[player.stat[7] > 1]}\n"
+
+                    fighter.stat[7] += player.stat[7]
+                    
+                    for obj in player.inventory:
+                        check = fighters[attacker].object_add(obj.name, obj.quantity)
+                        if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
+
+                    self.data_player.pop(player.id)
+
+                    message += loot
+            
+            else: message += f"__{player.name}__ esquive le coup."
+
+        else: message += f"__{fighter.name}__ rate son coup."
+
+        await ctx.send(message)
+        self.save_game()
 
 
 

@@ -23,8 +23,10 @@ def load_save():
     try:
         with open("save.txt", "r") as file:
             data_player, data_kick, guild_id = eval(file.read())
+
+        data_player = {player[0]: Player(*player) for player in data_player}
         print("... partie chargée")
-        return {player[0]: Player(*player) for player in data_player}, data_kick, guild_id
+        return data_player, data_kick, guild_id
     
     except:
         print("... aucune partie trouvée\n... création d'une nouvelle partie")
@@ -85,9 +87,10 @@ def phase_2(fighter):
 def phase_3(fighters, attacker, defender):
     level = fighters[attacker].get_level()
 
-    damage = fighters[attacker].stat[1] + randint(-10 * level, 10 * level)
+    damage = fighters[attacker].stat[1] + randint(-5 * level, 10 * level)
     if fighters[attacker].stat[8] > fighters[attacker].max_weight:
         damage -= (fighters[attacker].stat[8] - fighters[attacker].max_weight)
+        if fighters[attacker].state == 3: damage -= fighters[attacker].get_level() * 5
 
     damage -= fighters[defender].stat[4]
     if damage < 0: damage = 0
@@ -95,4 +98,25 @@ def phase_3(fighters, attacker, defender):
     fighters[defender].stat[5] -= damage
 
     return damage
+
+
+def weapon_select(player):
+    weapon = player.select_object_by_type(3, 4)
+
+    if player.state in (2, 4):
+        if player.state == 4: player.state = 0
+        return False, Object("", "", [0 for i in range(9)], -1, -1)
+
+    else: can_fight = True
+
+    if weapon == -1: weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
+    else: weapon = player.inventory[weapon]
     
+    if weapon.object_type == 4:
+        index = player.select_object_by_type(5)
+        if index != -1:
+            player.inventory[index].quantity -= 1
+        else:
+            can_fight = False
+    
+    return can_fight, weapon

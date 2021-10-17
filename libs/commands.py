@@ -7,6 +7,9 @@ from libs.lib_odyssee import *
 
 
 guild_id = None
+glb_players = {}
+
+
 async def server_id(ctx):
     global guild_id
 
@@ -18,12 +21,25 @@ async def server_id(ctx):
     return guild_id == ctx.guild.id
 
 
+async def awareness(ctx):
+    if ctx.author.id not in glb_players:
+        await ctx.send(f"{ctx.author.name} n'est pas un joueur enregistré")
+        return False
+
+    player = glb_players[ctx.author.id]
+    if player.state == 2:
+        await ctx.send(f"__{player.name}__ est inconscient(e).")
+        return False
+    return True
+
+
 class OdysseeCommands(commands.Cog):
     def __init__(self, config, savefile):
-        global guild_id
+        global guild_id, glb_players
         self.data_player, self.data_kick, guild_id = savefile
         self.PREFIX = config["PREFIX"]
 
+        glb_players = self.data_player.copy()
 
     def save_game(self):
         for player_id in self.data_player:
@@ -136,6 +152,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Changer de lieu.", brief="Changer de lieu")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def lieu(self, ctx, lieu: str):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -158,7 +175,7 @@ class OdysseeCommands(commands.Cog):
     
         # Embed's construction
         info = joueur.get_stat()
-        embed = discord.Embed(title=info[0], description=f"Statistiques de {info[0]}, {info[1]}\n de niveau {info[2]}", color=info[12])
+        embed = discord.Embed(title=f"{info[0]} [{info[18]}]", description=f"Statistiques de {info[0]}, {info[1]}\n de niveau {info[2]}", color=info[12])
         if info[16]: embed.set_thumbnail(url=info[16])
         
         # Capacities
@@ -238,7 +255,7 @@ class OdysseeCommands(commands.Cog):
         embed = discord.Embed(title="Joueurs", description="Liste des joueurs enregistrés", color=player.stat[9])
         for player_id in self.data_player:
             player = self.data_player[player_id]
-            embed.add_field(name=player.name, value=f"{player.species} de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}", inline=False)
+            embed.add_field(name=f"{player.name} [{player.get_state()}]", value=f"{player.species} de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}", inline=False)
         
         await ctx.send(embed=embed)
 
@@ -264,6 +281,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Jetter un objet, le premier paramètre est le nom de l'objet à jeter, le second est optionnel et correspond au nombre d'objets à jeter.", brief="Jeter un objet")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def jette(self, ctx, nom: str, nombre: int=1):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -283,6 +301,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Sert à utiliser un objet (manger de la nourriture ou consommer un bien). Le premier argument est le nom de l'objet à utiliser, le second (optionnel) correspond au nombre d'unité à utiliser.", brief="Utiliser un objet")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def utilise(self, ctx, nom: str, nombre: int=1):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -302,6 +321,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Donner un objet à un joueur. Le premier argument est le nom du joueur, le second le nom de l'objet ('Argent', ou 'Drachmes' pour donner de l'argent). Le dernier paramètre, faculatatif correspond à la quantité donnée (nombre d'unité ou montant).", brief="Donner un objet")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def donne(self, ctx, joueur: str, objet: str, nombre: int=1):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -363,6 +383,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Effectue un lancer dans dans une capacité (Courage, Force, Habileté, Rapidité, Défense).", brief="Effectuer un lancer dans une capacité")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def lancer(self, ctx, capacite: str):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -380,6 +401,7 @@ class OdysseeCommands(commands.Cog):
     
     @commands.command(help="Utiliser ou consulter ses pouvoirs. Le premier argument est le nom du pouvoir à utiliser, le second correspond au nom de l'adversaire visé (dans le cas où le pouvoir utilisé requiert un adversaire).\n\n Si vous laissez ses deux argments vide, vous obtenez la liste de vos pouvoirs avec une description.", brief="Utiliser ou consulter ses pouvoirs")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def pouvoir(self, ctx, nom: str=None, adversaire: str=None):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -412,6 +434,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Vous permer d'apprendre de nouveau sort. le nom du sort est obligatoire.", brief="Apprend un nouveau pouvoir spécial")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def apprend(self, ctx, nom: str):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -431,6 +454,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Vous permer d'oublier un sort. le nom du sort est obligatoire.", brief="Oublier un pouvoir spécial")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def oublie(self, ctx, nom: str):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -493,6 +517,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Vous permer d'acheter des objets. Le premier paramètre est le nom de l'objet, le second, faculatatif, est le nombre d'objet à acheter.", brief="Acheter un objet")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def achat(self, ctx, nom: str, nombre: int=1):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -518,12 +543,12 @@ class OdysseeCommands(commands.Cog):
         else:
             await send_error(ctx, f"__{player.name}__ n'a pas assez de Drachmes pour acheter cet objet : '{nom}'")
 
-
         self.save_game()
 
 
     @commands.command(help="Permet de vendre un objet. Le nom est à préciser, le nombre d'unité à vendre est facultatif (1 par défaut)", brief="Vendre un objet")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def vend(self, ctx, nom: str, nombre: int=1):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -603,6 +628,7 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Commencer ou continuer un combat. Précisez le nom de l'adversaire et l'arme utilisée.", brief="Combattre")
     @commands.check(server_id)
+    @commands.check(awareness)
     async def combat(self, ctx, adversaire: str, arme: str=None):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
@@ -656,27 +682,10 @@ class OdysseeCommands(commands.Cog):
                 return
             else: player_weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
 
+        # Arme de l'adversaire
+        target_can_fight, target_weapon = weapon_select(target)
 
         player.stat_add(player_weapon.stat)
-
-
-        # Arme de l'adversaire
-        target_weapon = target.select_object_by_type(3, 4)
-        target_can_fight = True
-
-        if target_weapon == -1: target_weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
-        else: target_weapon = target.inventory[target_weapon]
-        
-        if target_weapon.object_type == 4:
-            index = target.select_object_by_type(5)
-            if index != -1:
-                target.inventory[index].quantity -= 1
-            else:
-                target_can_fight = False
-
-        elif target.place != player.place:
-            target_can_fight = False
-
         target.stat_add(target_weapon.stat)
 
         # Qui commence
@@ -700,7 +709,7 @@ class OdysseeCommands(commands.Cog):
 
                     damage = phase_3(fighters, attacker, defender)
                     if damage:
-                        message += f"__{fighters[defender].name}__ subit {damage} point de dégâts.\n"
+                        message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
                     else:
                         message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
 
@@ -744,12 +753,41 @@ class OdysseeCommands(commands.Cog):
             await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis potentiels à proximité")
             return
 
-        if player.stat[5] < 100:
+        if player.state == 2: player.state = 0
+        elif player.stat[5] < 100:
             player.stat[5] += 5
-            if player.stat[5] > 100: player.stat[5] = 100
+            if player.stat[5] >= 100: player.stat[5] = 100
 
-        if player.stat[6] < 5:
+        if player.stat[6] < 5 and player.state != 3:
             player.stat[6] += 1
             if player.stat[6] > 5: player.stat[6] = 5
 
+        # Poisonned
+        if player.state == 1:
+            player.stat[5] -= random(1, 10)
+        # Wounded (end of)
+        elif player.state == 3 and player.stat[5] >= 80:
+            player.state = 0
+        # Asleep
+        elif player.state == 4:
+            player.state = 0
+        
         await ctx.send(f"__{player.name}__ dort.")
+
+        self.save_game()
+
+
+    @commands.command(name="état", help="Vous permet de changer votre état parmi : conscient, empoisonné, à terre, blessé, endormi", brief="Changer d'état")
+    @commands.check(server_id)
+    async def etat(self, ctx, nouvel_etat: str):
+        player = self.get_player_from_id(ctx.author.id)
+        if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
+
+        etats = ("conscient", "empoisonné", "inconscient", "blessé", "endormi")
+        if nouvel_etat in etats:
+            player.state = etats.index(nouvel_etat)
+            await ctx.send(f"__{player.name}__ devient {player.get_state()}.")
+        else:
+            send_error(ctx, f"{nouvel_etat} n'est pas un état connu")
+        
+        self.save_game()

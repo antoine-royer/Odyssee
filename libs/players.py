@@ -30,11 +30,12 @@ def roll_die(faces = 20, nb = 1):
 
 # Player : contient les infos des joueurs (PnJ compris)
 class Player:
-    def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", inventory=None, note=None, power=None):
+    def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", inventory=None, note=None, power=None, state=0):
         self.id = identifier
         self.name = name
         self.species = species
         self.place = place
+        self.state = state
         self.avatar = avatar
 
         if stat: self.stat = stat
@@ -54,7 +55,7 @@ class Player:
             else: self.power = []
 
     def export(self):
-        return self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power]
+        return self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state
 
     def isalive(self):
         return self.stat[5] > 0
@@ -62,8 +63,16 @@ class Player:
     def get_level(self):
         return (sum(self.stat[:4]) // 80) + 1
 
+    def get_state(self):
+        return ("conscient(e)", "empoisonné(e)", "insconscient(e)", "blessé(e)", "endormi(e)")[self.state]
+
     def capacity_roll(self, capacity_index):
-        point = ((roll_die() + self.stat[capacity_index]) / (40 * self.get_level()))
+        if self.state == 3:
+            malus = self.get_level() * 3
+            point = (roll_die() + self.stat[capacity_index] - malus) / (40 * self.get_level())
+        else:
+            point = (roll_die() + self.stat[capacity_index]) / (40 * self.get_level())
+
         if point >= 0.75:
             return 3 # succès critique
         elif point >= 0.5:
@@ -73,7 +82,7 @@ class Player:
         else: return 0 # échec critique
 
     def get_stat(self):
-        return [self.name, self.species, self.get_level()] + self.stat + [self.place, [(i.name, i.quantity) for i in self.inventory], self.note, self.avatar, [i.name for i in self.power]]
+        return [self.name, self.species, self.get_level()] + self.stat + [self.place, [(i.name, i.quantity) for i in self.inventory], self.note, self.avatar, [i.name for i in self.power], self.get_state()]
 
     # Du courage à la mana (incluse)
     def stat_add(self, stat_to_add):

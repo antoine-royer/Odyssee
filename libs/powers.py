@@ -232,6 +232,7 @@ def protection(user, players, target=None):
 def fatigue(user, players, target=None):
     pts = 15 * user.get_level()
     target.capacity_modify(3, -pts)
+    target.state = 4
     return f"__{target.name}__ est pris d'un soudain besoin de sommeil."
 
 
@@ -239,6 +240,7 @@ def vitesse(user, players, target=None):
     pts = 15 * user.get_level()
     user.capacity_modify(3, pts)
     return f"__{user.name}__ devient plus rapide."
+
 
 def charge(user, players, target=None):
     pts = user.stat[1] * 2
@@ -248,7 +250,9 @@ def charge(user, players, target=None):
         target.stat[5] -= pts
         return f"__{user.name}__ se jette sur __{target.name}__."
     else:
-        return f"__{target.name}__ est trop mal en point."
+        target.state = 2
+        return f"__{target.name}__ tombe au sol."
+
 
 def pourfendre(user, players, target=None):
     pts = int(user.stat[2] * 1.5)
