@@ -125,9 +125,9 @@ def nyctalopie(user, players, target=None):
 
 def vol(user, players, target=None):
     if user.capacity_roll(2):
-        amount = target.stat[7]
-        user.stat[7] += amount
-        target.stat[7] = 0
+        amount = target.stat[8]
+        user.stat[8] += amount
+        target.stat[8] = 0
         return f"__{user.name}__ vole {amount} Drachmes à __{target.name}__."
     else:
         return f"__{user.name}__ n'a pas réussi à voler __{target.name}__."
@@ -146,8 +146,8 @@ def guerison(user, players, target=None):
         if player_id < 0: next
 
         player = players[player_id]
-        if player.place == user.place and player.stat[5] < 100:
-            player.stat[5] = 100
+        if player.place == user.place and player.stat[6] < 100:
+            player.stat[6] = 100
             msg += f" - __{player.name}__ a retrouvé 100 points de Vie.\n"
     return msg
 
@@ -176,7 +176,7 @@ def invocation(user, players, target=None):
 
 def poison(user, players, target=None):
     pts = 10 * user.get_level()
-    if target.stat[5] > pts:
+    if target.stat[6] > pts:
         target.capacity_modify(5, -pts)
         return f"__{target.name}__ perd {pts} points de Vie."
     else:
@@ -199,7 +199,7 @@ def charme(user, players, target=None):
 
 def boule_de_feu(user, players, target=None):
     pts = 10 * user.get_level()
-    if target.stat[5] > pts:
+    if target.stat[6] > pts:
         for capacity_index in (0, 1, 5):
             target.capacity_modify(capacity_index, -pts)
         return f"__{target.name}__ est atteint par la boule de feu !"
@@ -209,7 +209,7 @@ def boule_de_feu(user, players, target=None):
 
 def corne_abondance(user, players, target=None):
     pts = 10 * user.get_level()
-    if user.stat[7] < 20 * user.get_level():
+    if user.stat[8] < 20 * user.get_level():
         user.capacity_modify(7, pts)
         return f"__{user.name}__ gagne {pts} Drachmes."
     else:
@@ -244,10 +244,10 @@ def vitesse(user, players, target=None):
 
 def charge(user, players, target=None):
     pts = user.stat[1] * 2
-    user.stat[6] += 1
+    user.stat[7] += 1
 
-    if target.stat[5] > pts:
-        target.stat[5] -= pts
+    if target.stat[6] > pts:
+        target.stat[6] -= pts
         return f"__{user.name}__ se jette sur __{target.name}__."
     else:
         target.state = 2
@@ -257,8 +257,8 @@ def charge(user, players, target=None):
 def pourfendre(user, players, target=None):
     pts = int(user.stat[2] * 1.5)
 
-    if target.stat[5] > pts:
-        target.stat[5] -= pts
+    if target.stat[6] > pts:
+        target.stat[6] -= pts
         return f"__{target.name}__ se fait transpercer."
     else:
         return f"__{target.name}__ fait un bond en arrière."

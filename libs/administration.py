@@ -106,7 +106,7 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"le joueur : '{nom}' n'existe pas")
 
 
-    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, l'état", brief="Modifier un joueur")
+    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, les états.", brief="Modifier un joueur")
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
         player_id = self.get_player_from_name(nom)
@@ -118,7 +118,7 @@ class AdminCommands(commands.Cog):
         except: pass
 
         capacite = capacite.lower()
-        capacities = ("courage", "force", "habileté", "rapidité", "défense", "vie", "mana", "argent")
+        capacities = ("courage", "force", "habileté", "rapidité", "intelligence", "défense", "vie", "mana", "argent")
         
         if capacite in capacities:
             player.stat[capacities.index(capacite)] += valeur
@@ -126,6 +126,7 @@ class AdminCommands(commands.Cog):
             if capacite != "argent":
                 msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} point{('', 's')[abs(valeur) > 1]} "
                 if capacite == "habileté": msg += "d'Habileté"
+                elif capacite == "intelligence": msg += "d'Intelligence"
                 else: msg += f"de {capacite.capitalize()}"
             else:
                 msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} Drachme{('', 's')[abs(valeur) > 1]}"
@@ -151,12 +152,14 @@ class AdminCommands(commands.Cog):
             else: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{valeur}' ou pas en assez grande quantité")
 
         elif capacite == "état":
-            etats = ("conscient", "empoisonné", "inconscient", "blessé", "endormi")
-            if valeur in etats:
-                player.state = etats.index(valeur)
-                await ctx.send(f"__{player.name}__ devient {player.get_state()}.")
+            print(valeur)
+            state = get_state_by_name(valeur)
+            if state + 1:
+                player.state = state
+                await ctx.send(f"__{player.name}__ devient {valeur}.")
             else:
-                send_error(ctx, f"{valeur} n'est pas un identifiant d'état connu")
+                await send_error(ctx, f"{valeur} n'est pas un état connu")
+        
         self.save_game()
 
 
@@ -272,15 +275,15 @@ class AdminCommands(commands.Cog):
             message += f"__{fighter.name}__ attaque __{player.name}__.\n"
 
             if damage:
-                player.stat[5] -= damage
+                player.stat[6] -= damage
                 message += f"__{player.name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
 
                 if not player.isalive():
                     loot = f"__{player.name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
-                    if player.stat[7]:
-                       loot += f" ❖ {player.stat[7]} Drachme{('', 's')[player.stat[7] > 1]}\n"
+                    if player.stat[8]:
+                       loot += f" ❖ {player.stat[8]} Drachme{('', 's')[player.stat[8] > 1]}\n"
 
-                    fighter.stat[7] += player.stat[7]
+                    fighter.stat[8] += player.stat[8]
                     
                     for obj in player.inventory:
                         check = fighters[attacker].object_add(obj.name, obj.quantity)

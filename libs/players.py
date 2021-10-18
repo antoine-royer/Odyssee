@@ -1,8 +1,9 @@
-# Statistiques : Courage (0), Force (1), Habileté (2), Rapidité (3) Défense (4), Vie (5), Mana (6), Argent (7), Poids porté (8), Couleur (9)
+# Statistiques : Courage (0), Force (1), Habileté (2), Rapidité (3), Intelligence (4), Défense (5), Vie (6), Mana (7), Argent (8), Poids porté (9), Couleur (10)
 
 from random import randint
 from libs.shop import *
 from libs.powers import *
+from libs.states import *
 
 
 # --- Constructeur du joueur --- #
@@ -13,7 +14,7 @@ def stat_gen(factor, level=1, enemy=False):
     if level < 1: level = 1
     color = randint(0, 16777215)
     
-    stat = [int(factor[i] * randint(20*(level-1), 20*level)) for i in range(4)]
+    stat = [int(factor[i] * randint(20*(level-1), 20*level)) for i in range(5)]
     stat.append(0)
     
     if enemy:
@@ -58,13 +59,13 @@ class Player:
         return self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state
 
     def isalive(self):
-        return self.stat[5] > 0
+        return self.stat[6] > 0
 
     def get_level(self):
-        return (sum(self.stat[:4]) // 80) + 1
+        return (sum(self.stat[:5]) // 100) + 1
 
     def get_state(self):
-        return ("conscient(e)", "empoisonné(e)", "insconscient(e)", "blessé(e)", "endormi(e)")[self.state]
+        return get_state_by_id(self.state)
 
     def capacity_roll(self, capacity_index):
         if self.state == 3:
@@ -86,11 +87,11 @@ class Player:
 
     # Du courage à la mana (incluse)
     def stat_add(self, stat_to_add):
-        for i in range(7): self.capacity_modify(i, stat_to_add[i])
+        for i in range(8): self.capacity_modify(i, stat_to_add[i])
         self.max_weight = 10 * self.stat[1]
 
     def stat_sub(self, stat_to_sub):
-        for i in range(7): self.capacity_modify(i, -stat_to_sub[i])
+        for i in range(8): self.capacity_modify(i, -stat_to_sub[i])
         self.max_weight = 10 * self.stat[1]
 
     def have(self, object_name): # Renvoie : (index, Object), Object.type = -1 si l'objet est inconnu ; index = -1 si l'objet n'est pas possédé
@@ -106,7 +107,7 @@ class Player:
 
         # Objet stockable en plusieurs exemplaire
         if obj.object_type in (1, 5):
-            self.stat[8] += nb * obj.stat[8]
+            self.stat[9] += nb * obj.stat[9]
 
             if index + 1: # Objet déjà possédé
                 self.inventory[index].quantity += nb
@@ -117,7 +118,7 @@ class Player:
 
         elif index == -1: # Si stockable en un seul exemplaire et que l'objet n'est pas dans l'inventaire
             obj.name = object_name
-            self.stat[8] += obj.stat[8]
+            self.stat[9] += obj.stat[9]
             obj.quantity = 1
             if obj.object_type != 2: self.inventory.append(obj)
             if obj.object_type in (0, 2): self.stat_add(obj.stat)
@@ -135,7 +136,7 @@ class Player:
 
         else:
             if nb > self.inventory[index].quantity: nb = self.inventory[index].quantity
-            self.stat[8] -= nb * obj.stat[8]
+            self.stat[9] -= nb * obj.stat[9]
             self.inventory[index].quantity -= nb
             if self.inventory[index].quantity <= 0: self.inventory.pop(index)
             if obj.object_type == 0: self.stat_sub(obj.stat)
@@ -149,7 +150,7 @@ class Player:
             return 0
 
         if obj.object_type in (1, 5):
-            self.stat[8] -= nb * obj.stat[8]
+            self.stat[9] -= nb * obj.stat[9]
             for _ in range(nb):
                 self.stat_add(obj.stat)
             self.inventory[index].quantity -= nb

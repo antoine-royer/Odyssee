@@ -145,14 +145,14 @@ class OdysseeCommands(commands.Cog):
 
         if couleur.startswith("0x"):
             couleur = int(couleur, 16)
-            player.stat[9] = couleur
+            player.stat[10] = couleur
             await ctx.send(f"La couleur de __{player.name}__ a été changée avec succès.")
         else:
             colors = requests.get("http://www.proftnj.com/RGB3.htm").text
             colors = {colors.text: f"{colors.get('value').lower()}" for colors in BeautifulSoup(colors, features="html5lib").find_all("option")}
             
             if couleur in colors:
-                player.stat[9] = int(colors[couleur], 16)
+                player.stat[10] = int(colors[couleur], 16)
                 await ctx.send(f"La couleur de __{player.name}__ est devenue : {couleur}.")
             else:
                 await send_error(ctx, f"couleur inconnue : '{couleur}'. Pour avoir la liste des couleurs disponible : http://www.proftnj.com/RGB3.htm")
@@ -185,45 +185,45 @@ class OdysseeCommands(commands.Cog):
     
         # Embed's construction
         info = joueur.get_stat()
-        embed = discord.Embed(title=f"{info[0]} [{info[18]}]", description=f"Statistiques de {info[0]}, {info[1]}\n de niveau {info[2]}", color=info[12])
-        if info[16]: embed.set_thumbnail(url=info[16])
+        embed = discord.Embed(title=f"{info[0]} [{info[19]}]", description=f"Statistiques de {info[0]}, {info[1]}\n de niveau {info[2]}", color=info[13])
+        if info[17]: embed.set_thumbnail(url=info[17])
         
         # Capacities
         capacities = ""
-        for index, capacity_name in enumerate(("Courage .", "Force ...", "Habileté ", "Rapidité ", "Défense .")):
+        for index, capacity_name in enumerate(("Courage ..", "Force ....", "Habileté .", "Rapidité .", "Intellect ", "Défense ..")):
             capacities += f"`{capacity_name}.: {info[3 + index]}`\n"
 
         # Misceleanous
         misc = ""
         for index, misc_name in enumerate(("Vie ...# PV", "Mana ..#", "Argent # Drachmes", f"Poids .# / {joueur.max_weight}")):
             before, after = misc_name.split("#")
-            misc += f"`{before}.: {info[index + 8]}{after}`\n"
+            misc += f"`{before}.: {info[index + 9]}{after}`\n"
 
         # Inventory
-        if len(info[14]):
+        if len(info[15]):
             inventory = ""
-            for item in info[14]:
+            for item in info[15]:
                 inventory += f" ❖ {item[0]} {('', f' ({item[1]})')[item[1] > 1]}\n"
         else:
             inventory = "< vide >"
 
         # Powers
-        if info[17]:
+        if info[18]:
             powers = ""
-            for i in info[17]:
+            for i in info[18]:
                 powers += f" ❖ {i.capitalize()}\n"
         else:
             powers = "< aucun >"
 
         # Notes
-        if info[15][0][0]:
-            note = "\n".join([f"{i[0]} - {i[1]}" for i in info[15]])
+        if info[16][0][0]:
+            note = "\n".join([f"{i[0]} - {i[1]}" for i in info[16]])
         else:
             note = "< aucune >"
 
         embed.add_field(name="Capacités", value=capacities, inline=True)
         embed.add_field(name="Divers", value=misc, inline=True)
-        embed.add_field(name="Lieu", value=info[13], inline=True)
+        embed.add_field(name="Lieu", value=info[14], inline=True)
         embed.add_field(name="Inventaire", value=inventory, inline=True)
         embed.add_field(name="Pouvoirs", value=powers, inline=True)
         embed.add_field(name="Notes", value=note, inline=True)
@@ -262,7 +262,7 @@ class OdysseeCommands(commands.Cog):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        embed = discord.Embed(title="Joueurs", description="Liste des joueurs enregistrés", color=player.stat[9])
+        embed = discord.Embed(title="Joueurs", description="Liste des joueurs enregistrés", color=player.stat[10])
         for player_id in self.data_player:
             player = self.data_player[player_id]
             embed.add_field(name=f"{player.name} [{player.get_state()}]", value=f"{player.species} de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}", inline=False)
@@ -349,9 +349,9 @@ class OdysseeCommands(commands.Cog):
         nombre = abs(nombre)
 
         if object_name in ("argent", "drachmes"):
-            if player.stat[7] >= nombre:
-                player.stat[7] -= nombre
-                target.stat[7] += nombre
+            if player.stat[8] >= nombre:
+                player.stat[8] -= nombre
+                target.stat[8] += nombre
                 await ctx.send(f"__{player.name}__ donne {nombre} Drachme{('', 's')[nombre > 1]} à __{target.name}__.")
             else:
                 await send_error(ctx, f"__{player.name}__ n'a pas assez de Drachmes pour donner")
@@ -391,14 +391,14 @@ class OdysseeCommands(commands.Cog):
         await ctx.send(f"__{player.name}__ lance {nombre} dé{('', 's')[nombre > 1]} à {faces} faces : {result} / {nombre * faces}.")
 
 
-    @commands.command(help="Effectue un lancer dans dans une capacité (Courage, Force, Habileté, Rapidité, Défense).", brief="Effectuer un lancer dans une capacité")
+    @commands.command(help="Effectue un lancer dans dans une capacité (Courage, Force, Habileté, Rapidité, Intelligence, Défense).", brief="Effectuer un lancer dans une capacité")
     @commands.check(server_id)
     @commands.check(awareness)
     async def lancer(self, ctx, capacite: str):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        capacities = ("Courage", "Force", "Habileté", "Rapidité", "Défense")
+        capacities = ("Courage", "Force", "Habileté", "Rapidité", "Intelligence", "Défense")
 
         if not capacite.capitalize() in capacities:
             await send_error(ctx, f"la capacité '{capacite}' n'est pas connue.")
@@ -406,7 +406,7 @@ class OdysseeCommands(commands.Cog):
 
         index = capacities.index(capacite.capitalize())
         comment = ("échec critique", "échec", "succès", "succès critique")[player.capacity_roll(index)]
-        await ctx.send(f"__{player.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index == 2] + capacities[index])
+        await ctx.send(f"__{player.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index in (2, 4)] + capacities[index])
 
     
     @commands.command(help="Utiliser ou consulter ses pouvoirs. Le premier argument est le nom du pouvoir à utiliser, le second correspond au nom de l'adversaire visé (dans le cas où le pouvoir utilisé requiert un adversaire).\n\n Si vous laissez ses deux argments vide, vous obtenez la liste de vos pouvoirs avec une description.", brief="Utiliser ou consulter ses pouvoirs")
@@ -426,14 +426,14 @@ class OdysseeCommands(commands.Cog):
 
             if not power: await send_error(ctx, f"le pouvoir '{nom}' n'existe pas"); return
             if power.power_id not in [i.power_id for i in player.power]: await send_error(ctx, f"__{player.name}__ ne possède pas le pouvoir : '{nom}'"); return
-            if player.stat[6] <= 0: await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue."); return
+            if player.stat[7] <= 0: await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue."); return
             if power.enemy and not adversaire: await send_error(ctx, f"le sort '{nom}' nécessite une cible"); return
 
-            player.stat[6] -= 1
+            player.stat[7] -= 1
             await ctx.send(f"__{player.name}__ utilise {nom} :\n" + power_use(power.power_id)(player, self.data_player, adversaire))
 
         else:
-            embed = discord.Embed(title=f"Pouvoirs de {player.name}", description="Pouvoirs spéciaux connus et descriptions", color=player.stat[9])
+            embed = discord.Embed(title=f"Pouvoirs de {player.name}", description="Pouvoirs spéciaux connus et descriptions", color=player.stat[10])
             
             for power in player.power:
                 description = power.description + ("", "(adversaire requis)")[power.enemy]
@@ -495,10 +495,10 @@ class OdysseeCommands(commands.Cog):
             obj = get_object(get_official_name(nom, shop_id))
             if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return
 
-            embed = discord.Embed(title=nom, value="Description détaillée", color=player.stat[9])
+            embed = discord.Embed(title=nom, value="Description détaillée", color=player.stat[10])
 
             capacity = ""
-            for index, name in enumerate(("Courage .", "Force ...", "Habileté ", "Rapidité ", "Défense .")):
+            for index, name in enumerate(("Courage ..", "Force ....", "Habileté .", "Rapidité .", "Intellect ", "Défense ..")):
                 capacity += f"`{name}.: {obj.stat[index]}`\n"
 
             misc = ""
@@ -516,9 +516,9 @@ class OdysseeCommands(commands.Cog):
 
         else:
             all_objects = get_object_by_shop(shop_id)
-            embed = discord.Embed(title=player.place, description="Liste des articles disponible", color=player.stat[9])
+            embed = discord.Embed(title=player.place, description="Liste des articles disponible", color=player.stat[10])
             for obj in all_objects:
-                capacity = ("Courage", "Force", "Habileté", "Rapidité", "Défense", "Vie", "Mana", "Valeur", "Poids")
+                capacity = ("Courage", "Force", "Habileté", "Rapidité", "Intelligence", "Défense", "Vie", "Mana", "Valeur", "Poids")
                 capacity = "; ".join([f"{name} : {obj.stat[index]}" for index, name in enumerate(capacity) if obj.stat[index]])
                 embed.add_field(name=obj.name.capitalize(), value=capacity, inline=False)
 
@@ -540,13 +540,13 @@ class OdysseeCommands(commands.Cog):
 
         if obj.object_type not in (1, 5) or nombre < 1: nombre = 1
 
-        if player.stat[7] >= nombre * obj.stat[7]:
+        if player.stat[8] >= nombre * obj.stat[8]:
             check = player.object_add(nom, nombre)
 
             if check:
-                player.stat[7] -= nombre * obj.stat[7]
+                player.stat[8] -= nombre * obj.stat[8]
                 nb = ("", f" ({nombre})")[nombre > 1]
-                await ctx.send(f"__{player.name}__ a acheté l'objet : '{nom}{nb}' pour {nombre * obj.stat[7]} Drachmes.")
+                await ctx.send(f"__{player.name}__ a acheté l'objet : '{nom}{nb}' pour {nombre * obj.stat[8]} Drachmes.")
             else:
                 await send_error(ctx, f"__{player.name}__ a déjà cet objet : '{nom}'")
 
@@ -574,9 +574,9 @@ class OdysseeCommands(commands.Cog):
         check = player.object_del(nom, nombre)
 
         if check:
-            cost = (3 * nombre * obj.stat[7]) // 4
+            cost = (3 * nombre * obj.stat[8]) // 4
             nombre = ("", f" ({nombre})")[nombre > 1]
-            player.stat[7] += cost
+            player.stat[8] += cost
             await ctx.send(f"__{player.name}__ a vendu l'objet : '{nom}{nombre}' pour {cost} Drachmes.")
         else:
             await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{nom}', ou pas en assez grande quantité")
@@ -631,7 +631,7 @@ class OdysseeCommands(commands.Cog):
         names = requests.get(f"https://www.nomsdefantasy.com/{categorie}/short").text
         names = [names.contents[0] for names in BeautifulSoup(names, features="html5lib").find_all("li")]
         
-        embed = discord.Embed(title="Générateur de nom", description=f"Nom{('', 's')[nombre > 1]} '{categorie}' au hasard", color=player.stat[9])
+        embed = discord.Embed(title="Générateur de nom", description=f"Nom{('', 's')[nombre > 1]} '{categorie}' au hasard", color=player.stat[10])
         embed.add_field(name="Noms", value=" ❖ " + "\n ❖ ".join(names[:nombre]))
         await ctx.send(embed=embed)
 
@@ -727,10 +727,10 @@ class OdysseeCommands(commands.Cog):
                     end = False
                     if not fighters[defender].isalive():
                         loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
-                        if fighters[defender].stat[7]:
-                           loot += f" ❖ {fighters[defender].stat[7]} Drachme{('', 's')[fighters[defender].stat[7] > 1]}\n"
+                        if fighters[defender].stat[8]:
+                           loot += f" ❖ {fighters[defender].stat[8]} Drachme{('', 's')[fighters[defender].stat[8] > 1]}\n"
 
-                        fighters[attacker].stat[7] += fighters[defender].stat[7]
+                        fighters[attacker].stat[8] += fighters[defender].stat[8]
                         
                         for obj in fighters[defender].inventory:
                             check = fighters[attacker].object_add(obj.name, obj.quantity)
@@ -765,19 +765,19 @@ class OdysseeCommands(commands.Cog):
             return
 
         if player.state == 2: player.state = 0
-        elif player.stat[5] < 100:
-            player.stat[5] += 5
-            if player.stat[5] >= 100: player.stat[5] = 100
+        elif player.stat[6] < 100:
+            player.stat[6] += 5
+            if player.stat[6] >= 100: player.stat[6] = 100
 
-        if player.stat[6] < 5 and player.state != 3:
-            player.stat[6] += 1
-            if player.stat[6] > 5: player.stat[6] = 5
+        if player.stat[7] < 5 and player.state != 3:
+            player.stat[7] += 1
+            if player.stat[7] > 5: player.stat[7] = 5
 
         # Poisonned
         if player.state == 1:
-            player.stat[5] -= random(1, 10)
+            player.stat[6] -= random(1, 10)
         # Wounded (end of)
-        elif player.state == 3 and player.stat[5] >= 80:
+        elif player.state == 3 and player.stat[6] >= 80:
             player.state = 0
         # Asleep
         elif player.state == 4:
@@ -788,16 +788,17 @@ class OdysseeCommands(commands.Cog):
         self.save_game()
 
 
-    @commands.command(name="état", help="Vous permet de changer votre état parmi : conscient, empoisonné, à terre, blessé, endormi", brief="Changer d'état")
+    @commands.command(name="état", help=f"Vous permet de changer votre état parmi : {', '.join(get_states_list())}", brief="Changer d'état")
     @commands.check(server_id)
     async def etat(self, ctx, nouvel_etat: str):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        etats = ("conscient", "empoisonné", "inconscient", "blessé", "endormi")
-        if nouvel_etat in etats:
-            player.state = etats.index(nouvel_etat)
-            await ctx.send(f"__{player.name}__ devient {player.get_state()}.")
+        nouvel_etat = nouvel_etat.lower()
+        state = get_state_by_name(nouvel_etat)
+        if state:
+            player.state = state
+            await ctx.send(f"__{player.name}__ devient {nouvel_etat}.")
         else:
             send_error(ctx, f"{nouvel_etat} n'est pas un état connu")
         

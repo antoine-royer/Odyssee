@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from libs.players import *
 from libs.travel import *
+from libs.states import *
 
 
 # --- Fonctions de sauvegarde --- #
@@ -88,14 +89,14 @@ def phase_3(fighters, attacker, defender):
     level = fighters[attacker].get_level()
 
     damage = fighters[attacker].stat[1] + randint(-5 * level, 10 * level)
-    if fighters[attacker].stat[8] > fighters[attacker].max_weight:
-        damage -= (fighters[attacker].stat[8] - fighters[attacker].max_weight)
+    if fighters[attacker].stat[9] > fighters[attacker].max_weight:
+        damage -= (fighters[attacker].stat[9] - fighters[attacker].max_weight)
         if fighters[attacker].state == 3: damage -= fighters[attacker].get_level() * 5
 
-    damage -= fighters[defender].stat[4]
+    damage -= fighters[defender].stat[5]
     if damage < 0: damage = 0
 
-    fighters[defender].stat[5] -= damage
+    fighters[defender].stat[6] -= damage
 
     return damage
 

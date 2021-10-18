@@ -38,12 +38,12 @@ def get_object(object_name, shop_id=None):
 
     if shop_id:
         database = c.execute(f"""
-            SELECT nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type, magasin FROM objets
+            SELECT nom, courage, force, habilete, rapidite, intelligence, defense, vie, mana, argent, poids, type, magasin FROM objets
             WHERE nom = \"{object_name}\" AND magasin = {shop_id}
         """).fetchall()
     else:
         database = c.execute(f"""
-            SELECT nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type, magasin FROM objets
+            SELECT nom, courage, force, habilete, rapidite, intelligence, defense, vie, mana, argent, poids, type, magasin FROM objets
             WHERE nom = \"{object_name}\"
         """).fetchall()
     table.close()
@@ -52,7 +52,7 @@ def get_object(object_name, shop_id=None):
         database = database[0]
         return Object(object_name, database[0], database[1: -2], database[-2], database[-1]) 
     else:
-        return Object(object_name, object_name, [int(i == 8) for i in range(9)], -1, -1)
+        return Object(object_name, object_name, [int(i == 9) for i in range(10)], -1, -1)
 
 
 def get_official_name(object_name, return_entry=False):
@@ -78,7 +78,7 @@ def get_object_by_shop(shop_id):
     c = table.cursor()
 
     database = c.execute(f"""
-        SELECT nom, courage, force, habilete, rapidite, defense, vie, mana, argent, poids, type, magasin FROM objets
+        SELECT nom, courage, force, habilete, rapidite, intelligence, defense, vie, mana, argent, poids, type, magasin FROM objets
         WHERE magasin = {shop_id}
         """).fetchall()
     table.close()
