@@ -233,7 +233,7 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.", brief="Ajouter un objet")
     @commands.check(is_admin)
-    async def ajout_objet(self, ctx, magasin: int, type_objet: int, nom: str, courage: int, force: int, habilete: int, rapidite: int, defense: int, vie: int, mana: int, argent: int, poids: int):
+    async def ajout_objet(self, ctx, magasin: int, type_objet: int, nom: str, courage: int, force: int, habilete: int, rapidite: int, intelligence: int, defense: int, vie: int, mana: int, argent: int, poids: int):
         check = get_official_name(nom)
         if check: await send_error(f"l'objet : '{nom}' existe déjà"); return
 
@@ -241,7 +241,7 @@ class AdminCommands(commands.Cog):
         c = table.cursor()
 
         c.execute(f"""
-            INSERT INTO objets VALUES ({magasin}, {type_objet}, {nom}, {courage}, {force}, {habilete}, {rapidité}, {defense}, {vie}, {mana}, {argent}, {poids})
+            INSERT INTO objets VALUES ({magasin}, {type_objet}, {nom}, {courage}, {force}, {habilete}, {rapidité}, {intelligence}, {defense}, {vie}, {mana}, {argent}, {poids})
         """)
 
         table.commit()

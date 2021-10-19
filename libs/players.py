@@ -31,7 +31,7 @@ def roll_die(faces = 20, nb = 1):
 
 # Player : contient les infos des joueurs (PnJ compris)
 class Player:
-    def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", inventory=None, note=None, power=None, state=0):
+    def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", inventory=None, note=None, power=None, state=0, abilities=None):
         self.id = identifier
         self.name = name
         self.species = species
@@ -55,8 +55,12 @@ class Player:
             if default_power: self.power = [default_power]
             else: self.power = []
 
+        if abilities: self.abilities = abilities[:]
+        else:
+            self.abilities = []
+
     def export(self):
-        return self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state
+        return self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state, self.abilities
 
     def isalive(self):
         return self.stat[6] > 0
@@ -83,7 +87,7 @@ class Player:
         else: return 0 # échec critique
 
     def get_stat(self):
-        return [self.name, self.species, self.get_level()] + self.stat + [self.place, [(i.name, i.quantity) for i in self.inventory], self.note, self.avatar, [i.name for i in self.power], self.get_state()]
+        return [self.name, self.species, self.get_level()] + self.stat + [self.place, [(i.name, i.quantity) for i in self.inventory], self.note, self.avatar, [i.name for i in self.power], self.get_state(), [(i[0], i[1]) for i in self.abilities]]
 
     # Du courage à la mana (incluse)
     def stat_add(self, stat_to_add):
@@ -181,15 +185,18 @@ class Player:
 
     def power_add(self, power_name):
         power = get_power_by_name(power_name)
+        
+        # Pouvoir non enregistré
         if not power:
-            # Pouvoir non enregistré
             return 0
-        elif power.power_id in [i.power_id for i in self.power] or len(self.power) >= 3:
-            # Pouvoir déjà possédé
+
+        # Pouvoir déjà possédé
+        elif power.power_id in [i.power_id for i in self.power] or len(self.power) >= 3 + (self.stat[4] // 100):
             return 1
+        
+        # Succès
         else:
             self.power.append(power)
-            # Succès
             return 2
 
     def power_sub(self, power_name):
@@ -224,4 +231,31 @@ class Player:
             if obj.object_type in search_types:
                 return index
         return -1
+
+    def add_abilities(self, ab_name, index):
+        if index == -1:
+            self.abilities.append([ab_name, 1])
+            return 1
+        else:
+            self.abilities[index][1] += 1
+            return 2
+
+    def sub_abilities(self, ab_name, index):
+        self.abilities[index][1] -= 1
+
+        if self.abilities[index][1] == 0:
+            return 1 # le joueur perd la compétence
+        else:
+            return 2 # le joueur perd un point
+
+    def have_abilities(self, ab_name):
+        for index, ab in enumerate(self.abilities):
+            if ab_name == ab[0]: return index
+
+        return -1
+
+
+
+
+
 

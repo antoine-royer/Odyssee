@@ -21,7 +21,7 @@ def get_state_by_name(state_name):
 
     result = c.execute(f"""
         SELECT id FROM etats
-        WHERE nom_ref LIKE '%{state_name}%'
+        WHERE nom_ref LIKE '{state_name}%'
         """).fetchall()
     table.close()
 

@@ -185,7 +185,7 @@ class OdysseeCommands(commands.Cog):
     
         # Embed's construction
         info = joueur.get_stat()
-        embed = discord.Embed(title=f"{info[0]} [{info[19]}]", description=f"Statistiques de {info[0]}, {info[1]}\n de niveau {info[2]}", color=info[13])
+        embed = discord.Embed(title=f"{info[0]}", description=f"Statistiques de {info[0]} [{info[19]}], {info[1]}\n de niveau {info[2]}", color=info[13])
         if info[17]: embed.set_thumbnail(url=info[17])
         
         # Capacities
@@ -200,7 +200,7 @@ class OdysseeCommands(commands.Cog):
             misc += f"`{before}.: {info[index + 9]}{after}`\n"
 
         # Inventory
-        if len(info[15]):
+        if info[15]:
             inventory = ""
             for item in info[15]:
                 inventory += f" ❖ {item[0]} {('', f' ({item[1]})')[item[1] > 1]}\n"
@@ -221,11 +221,19 @@ class OdysseeCommands(commands.Cog):
         else:
             note = "< aucune >"
 
+        # Compétences
+        if info[20]:
+            abilities = ""
+            for i in info[20]: abilities += f" ❖ {i[0].capitalize()} ({i[1]})\n"
+        else:
+            abilities = "< aucune >"
+
         embed.add_field(name="Capacités", value=capacities, inline=True)
         embed.add_field(name="Divers", value=misc, inline=True)
         embed.add_field(name="Lieu", value=info[14], inline=True)
         embed.add_field(name="Inventaire", value=inventory, inline=True)
         embed.add_field(name="Pouvoirs", value=powers, inline=True)
+        embed.add_field(name="Compétences", value=abilities, inline=True)
         embed.add_field(name="Notes", value=note, inline=True)
 
         await ctx.send(embed=embed)
@@ -265,7 +273,7 @@ class OdysseeCommands(commands.Cog):
         embed = discord.Embed(title="Joueurs", description="Liste des joueurs enregistrés", color=player.stat[10])
         for player_id in self.data_player:
             player = self.data_player[player_id]
-            embed.add_field(name=f"{player.name} [{player.get_state()}]", value=f"{player.species} de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}", inline=False)
+            embed.add_field(name=f"{player.name}", value=f"{player.species} [{player.get_state()}] de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}", inline=False)
         
         await ctx.send(embed=embed)
 
@@ -391,7 +399,7 @@ class OdysseeCommands(commands.Cog):
         await ctx.send(f"__{player.name}__ lance {nombre} dé{('', 's')[nombre > 1]} à {faces} faces : {result} / {nombre * faces}.")
 
 
-    @commands.command(help="Effectue un lancer dans dans une capacité (Courage, Force, Habileté, Rapidité, Intelligence, Défense).", brief="Effectuer un lancer dans une capacité")
+    @commands.command(help="Effectue un lancer de dé dans dans une capacité ou une compétence.", brief="Effectuer un lancer dans une capacité")
     @commands.check(server_id)
     @commands.check(awareness)
     async def lancer(self, ctx, capacite: str):
@@ -399,12 +407,38 @@ class OdysseeCommands(commands.Cog):
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
         capacities = ("Courage", "Force", "Habileté", "Rapidité", "Intelligence", "Défense")
+        capacite = capacite.capitalize()
 
-        if not capacite.capitalize() in capacities:
-            await send_error(ctx, f"la capacité '{capacite}' n'est pas connue.")
-            return
+        if not capacite in capacities:
+            capacite = capacite.lower()
+            check = player.have_abilities(capacite)
+            die_score = randint(1, 20)
 
-        index = capacities.index(capacite.capitalize())
+            if die_score > 15:
+                player.add_abilities(capacite, check)
+                if check == -1:
+                    await ctx.send(f"__{player.name}__ gagne la compétence : '{capacite}'.")
+                else:
+                    await ctx.send(f"__{player.name}__ gagne un point sur la compétence : '{capacite}'.")
+
+                return
+
+            elif check == -1:
+                await ctx.send(f"__{player.name}__ n'a pas réussi à apprendre la compétence : '{capacite}'.")
+                return
+
+            elif die_score <= 5:
+                if player.sub_abilities(capacite) == 1:
+                    await ctx.send(f"__{player.name}__ a perdu la compétence : '{capacite}'.")
+                else:
+                    await ctx.send(f"__{player.name} perd un point sur la compétence : '{capacite}'.")  
+                return
+
+            else:
+                await ctx.send(f"__{player.name}__ a réussi son lancer.")    
+                return         
+
+        index = capacities.index(capacite)
         comment = ("échec critique", "échec", "succès", "succès critique")[player.capacity_roll(index)]
         await ctx.send(f"__{player.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index in (2, 4)] + capacities[index])
 
@@ -424,10 +458,21 @@ class OdysseeCommands(commands.Cog):
             power = get_power_by_name(nom.lower())
             nom = nom.capitalize()
 
-            if not power: await send_error(ctx, f"le pouvoir '{nom}' n'existe pas"); return
-            if power.power_id not in [i.power_id for i in player.power]: await send_error(ctx, f"__{player.name}__ ne possède pas le pouvoir : '{nom}'"); return
-            if player.stat[7] <= 0: await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue."); return
-            if power.enemy and not adversaire: await send_error(ctx, f"le sort '{nom}' nécessite une cible"); return
+            if not power:
+                await send_error(ctx, f"le pouvoir '{nom}' n'existe pas")
+                return
+
+            if power.power_id not in [i.power_id for i in player.power]:
+                await send_error(ctx, f"__{player.name}__ ne possède pas le pouvoir : '{nom}'")
+                return
+
+            if player.stat[7] <= 0:
+                await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue.")
+                return
+
+            if power.enemy and not adversaire:
+                await send_error(ctx, f"le sort '{nom}' nécessite une cible")
+                return
 
             player.stat[7] -= 1
             await ctx.send(f"__{player.name}__ utilise {nom} :\n" + power_use(power.power_id)(player, self.data_player, adversaire))
@@ -455,7 +500,7 @@ class OdysseeCommands(commands.Cog):
         if check == 0:
             await send_error(ctx, f"le pouvoir '{nom} n'existe pas")
         elif check == 1:
-            await send_error(ctx, f"__{player.name}__ a déjà le pouvoir : '{nom}' ou vous avez déjà plus de trois pouvoirs")
+            await send_error(ctx, f"__{player.name}__ a déjà le pouvoir : '{nom}' ou vous avez trop de pouvoirs")
         else:
             await ctx.send(f"__{player.name}__ apprend le pouvoir : '{nom}'.")
 
@@ -649,7 +694,7 @@ class OdysseeCommands(commands.Cog):
         if not target:
             new_player_id = -(len(self.data_player) + 1)
             level = get_avg_level(self.data_player)
-            stat = stat_gen([1 for _ in range(4)], randint(1, int(1.5 * level)), True)
+            stat = stat_gen([1 for _ in range(5)], randint(1, int(1.5 * level)), True)
             self.data_player.update({new_player_id : Player(new_player_id, adversaire, "Ennemi", "", stat, player.place)})
             self.save_game()
 
@@ -720,6 +765,7 @@ class OdysseeCommands(commands.Cog):
 
                     damage = phase_3(fighters, attacker, defender)
                     if damage:
+                        fighters[defender].state = get_state_by_name("blessé")
                         message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
                     else:
                         message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"

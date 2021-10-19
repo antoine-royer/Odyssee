@@ -20,7 +20,7 @@ class Object:
 
 def get_shop_name():
     return (
-        ("auberge", "gargote", "taverne", "hôtel"),
+        ("auberge", "gargote", "taverne", "hôtel", "bar"),
         ("forge", "armurerie"),
         ("officine", "herboristerie", "pharamacie"),
         ("tannerie", "maroquinerie"),
