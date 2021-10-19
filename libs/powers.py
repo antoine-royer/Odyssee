@@ -114,6 +114,7 @@ def power_use(power_id):
         vitesse,
         charge,
         pourfendre,
+        andidote
     )[power_id]
 
 
@@ -149,6 +150,7 @@ def guerison(user, players, target=None):
         if player.place == user.place and player.stat[6] < 100:
             player.stat[6] = 100
             msg += f" - __{player.name}__ a retrouvé 100 points de Vie.\n"
+
     return msg
 
 
@@ -168,15 +170,17 @@ def chant(user, players, target=None):
 
 
 def invocation(user, players, target=None):
-    pts = 5 * user.get_level()
+    pts = 10 * user.get_level()
     for capacity_index in (1, 2):
         target.capacity_modify(capacity_index, -pts)
-    return f"Le démon que vous avez invoqué paralyse __{target.name}__ de terreur."
+
+    return f"Le démon que vous avez invoqué provoque une terreur infinie chez __{target.name}__."
 
 
 def poison(user, players, target=None):
     pts = 10 * user.get_level()
     if target.stat[6] > pts:
+        target.state = 1
         target.capacity_modify(5, -pts)
         return f"__{target.name}__ perd {pts} points de Vie."
     else:
@@ -262,3 +266,10 @@ def pourfendre(user, players, target=None):
         return f"__{target.name}__ se fait transpercer."
     else:
         return f"__{target.name}__ fait un bond en arrière."
+
+def antidote(user, player, target=None):
+    if target.state == 1:
+        target.state = 0
+        return f"__{target.name}__ n'est plus empoisonné."
+    else:
+        return f"__{target.name}__ n'était pas empoisonné."

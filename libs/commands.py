@@ -39,7 +39,7 @@ class OdysseeCommands(commands.Cog):
         self.data_player, self.data_kick, guild_id = savefile
         self.PREFIX = config["PREFIX"]
 
-        glb_players = self.data_player.copy()
+        glb_players = self.data_player
 
     def save_game(self):
         for player_id in self.data_player:
@@ -180,12 +180,12 @@ class OdysseeCommands(commands.Cog):
         else: joueur = self.get_player_from_id(ctx.author.id)
 
         if not joueur:
-            await send_error("vous n'êtes pas un joueur enregistré ou le joueur dont vous voulez voir les statististiques n'existe pas")
+            await send_error(ctx, "vous n'êtes pas un joueur enregistré ou le joueur dont vous voulez voir les statististiques n'existe pas")
             return
     
         # Embed's construction
         info = joueur.get_stat()
-        embed = discord.Embed(title=f"{info[0]}", description=f"Statistiques de {info[0]} [{info[19]}], {info[1]}\n de niveau {info[2]}", color=info[13])
+        embed = discord.Embed(title=f"{info[0]}", description=f"[{info[19]}]\nStatistiques de {info[0]}, {info[1]}\n de niveau {info[2]}", color=info[13])
         if info[17]: embed.set_thumbnail(url=info[17])
         
         # Capacities
@@ -224,7 +224,7 @@ class OdysseeCommands(commands.Cog):
         # Compétences
         if info[20]:
             abilities = ""
-            for i in info[20]: abilities += f" ❖ {i[0].capitalize()} ({i[1]})\n"
+            for i in info[20]: abilities += f" ❖ {i[0].capitalize()} ({i[1]} / 20)\n"
         else:
             abilities = "< aucune >"
 
@@ -252,12 +252,12 @@ class OdysseeCommands(commands.Cog):
 
         if type(contenu) == str:
             player.add_note(contenu)
-            await ctx.send(f"____{player.name}____ a ajouté la note :\n> {contenu}")
+            await ctx.send(f"__{player.name}__ a ajouté la note :\n> {contenu}")
 
         elif type(contenu) == int and contenu > 0:
             check = player.del_note(contenu)
             if check:
-                await ctx.send(f"____{player.name}____ a supprimé la note :\n> {check}")
+                await ctx.send(f"__{player.name}__ a supprimé la note :\n> {check}")
             else:
                 await ctx.send(f"*Erreur : la note n°{contenu} n'existe pas.*")
 
@@ -273,7 +273,7 @@ class OdysseeCommands(commands.Cog):
         embed = discord.Embed(title="Joueurs", description="Liste des joueurs enregistrés", color=player.stat[10])
         for player_id in self.data_player:
             player = self.data_player[player_id]
-            embed.add_field(name=f"{player.name}", value=f"{player.species} [{player.get_state()}] de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}", inline=False)
+            embed.add_field(name=f"{player.name}", value=f"{player.species} de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}\n[{player.get_state()}]", inline=False)
         
         await ctx.send(embed=embed)
 
@@ -414,33 +414,36 @@ class OdysseeCommands(commands.Cog):
             check = player.have_abilities(capacite)
             die_score = randint(1, 20)
 
+            if check != -1: die_score += player.abilities[check][1] // 5
+
             if die_score > 15:
                 player.add_abilities(capacite, check)
                 if check == -1:
-                    await ctx.send(f"__{player.name}__ gagne la compétence : '{capacite}'.")
+                    await ctx.send(f"__{player.name}__ a gagné la compétence : '{capacite}'.")
                 else:
-                    await ctx.send(f"__{player.name}__ gagne un point sur la compétence : '{capacite}'.")
-
-                return
+                    await ctx.send(f"__{player.name}__ a réussi son lancer de compétence (+1) : '{capacite}'.")
 
             elif check == -1:
                 await ctx.send(f"__{player.name}__ n'a pas réussi à apprendre la compétence : '{capacite}'.")
-                return
 
-            elif die_score <= 5:
+            elif dir_score >= 10 :
+                await ctx.send(f"__{player.name}__ a réussi son lancer de compétence : '{capacite}'.")
+
+            elif die_score > 5:
+                await ctx.send(f"__{player.name}__ a raté son lancer de compétence : '{capacite}'.")
+
+            else:
                 if player.sub_abilities(capacite) == 1:
                     await ctx.send(f"__{player.name}__ a perdu la compétence : '{capacite}'.")
                 else:
-                    await ctx.send(f"__{player.name} perd un point sur la compétence : '{capacite}'.")  
-                return
+                    await ctx.send(f"__{player.name}__ a raté son lancer de compétence (-1) : '{capacite}'.")
 
-            else:
-                await ctx.send(f"__{player.name}__ a réussi son lancer.")    
-                return         
+            self.save_game()
 
-        index = capacities.index(capacite)
-        comment = ("échec critique", "échec", "succès", "succès critique")[player.capacity_roll(index)]
-        await ctx.send(f"__{player.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index in (2, 4)] + capacities[index])
+        else:
+            index = capacities.index(capacite)
+            comment = ("échec critique", "échec", "succès", "succès critique")[player.capacity_roll(index)]
+            await ctx.send(f"__{player.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index in (2, 4)] + capacities[index])
 
     
     @commands.command(help="Utiliser ou consulter ses pouvoirs. Le premier argument est le nom du pouvoir à utiliser, le second correspond au nom de l'adversaire visé (dans le cas où le pouvoir utilisé requiert un adversaire).\n\n Si vous laissez ses deux argments vide, vous obtenez la liste de vos pouvoirs avec une description.", brief="Utiliser ou consulter ses pouvoirs")
@@ -466,7 +469,7 @@ class OdysseeCommands(commands.Cog):
                 await send_error(ctx, f"__{player.name}__ ne possède pas le pouvoir : '{nom}'")
                 return
 
-            if player.stat[7] <= 0:
+            if player.stat[7] <= 0 or player.capacity_roll(4) == 0:
                 await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue.")
                 return
 
@@ -481,7 +484,7 @@ class OdysseeCommands(commands.Cog):
             embed = discord.Embed(title=f"Pouvoirs de {player.name}", description="Pouvoirs spéciaux connus et descriptions", color=player.stat[10])
             
             for power in player.power:
-                description = power.description + ("", "(adversaire requis)")[power.enemy]
+                description = power.description + ("", "(cible requise)")[power.enemy]
                 embed.add_field(name=power.name.capitalize(), value=power.description, inline=False)
             
             await ctx.send(embed=embed)
@@ -810,28 +813,34 @@ class OdysseeCommands(commands.Cog):
             await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis potentiels à proximité")
             return
 
-        if player.state == 2: player.state = 0
-        elif player.stat[6] < 100:
+        lvl = player.get_level()
+        max_mana, max_pv = lvl * 5, lvl * 100
+        
+        # Régénération de la vie
+        if player.stat[6] < 100:
             player.stat[6] += 5
-            if player.stat[6] >= 100: player.stat[6] = 100
+            if player.stat[6] > max_pv: player.stat[6] = max_pv
 
+        # régénération de la mana
         if player.stat[7] < 5 and player.state != 3:
             player.stat[7] += 1
-            if player.stat[7] > 5: player.stat[7] = 5
+            if player.stat[7] > max_mana: player.stat[7] = max_mana
 
-        # Poisonned
+        # Empoisonné
         if player.state == 1:
             player.stat[6] -= random(1, 10)
-        # Wounded (end of)
-        elif player.state == 3 and player.stat[6] >= 80:
-            player.state = 0
-        # Asleep
-        elif player.state == 4:
+
+        # Inconscient
+        if player.state == 2:
             player.state = 0
         
-        await ctx.send(f"__{player.name}__ dort.")
-
-        self.save_game()
+        # Blessé
+        if player.state == 3 and player.stat[6] >= 80:
+            player.state = 0
+        
+        # Endormi
+        if player.state == 4:
+            player.state = 0
 
 
     @commands.command(name="état", help=f"Vous permet de changer votre état parmi : {', '.join(get_states_list())}", brief="Changer d'état")

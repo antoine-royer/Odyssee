@@ -237,7 +237,7 @@ class Player:
             self.abilities.append([ab_name, 1])
             return 1
         else:
-            self.abilities[index][1] += 1
+            if self.abilities[index][1] < 20: self.abilities[index][1] += 1
             return 2
 
     def sub_abilities(self, ab_name, index):

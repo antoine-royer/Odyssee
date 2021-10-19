@@ -84,7 +84,7 @@ class AdminCommands(commands.Cog):
         else:
             new_player_id = -(len(self.data_player) + 1)
             
-            stat = stat_gen([1 for _ in range(4)], randint(1, level + 2), True)
+            stat = stat_gen([1 for _ in range(5)], randint(1, level + 2), True)
 
             self.data_player.update({new_player_id : Player(new_player_id, nom, espece, '', stat)})
             await ctx.send(f"{nom}, un(e) {espece}, est apparu(e).")
@@ -301,6 +301,49 @@ class AdminCommands(commands.Cog):
         await ctx.send(message)
         self.save_game()
 
+    @commands.command(help="Fait passer la nuit pour tous les PnJ", brief="Fait dormir les PnJ")
+    @commands.check(is_admin)
+    async def nuit(self, ctx):
+        pnj_names = []
+        for pnj_id in self.data_player:
+            if pnj_id > 0: continue
+            pnj = self.get_player_from_id(pnj_id)
+            pnj_names.append(pnj.name)
+
+            lvl = pnj.get_level()
+            max_mana, max_pv = lvl * 5, lvl * 100
+            
+            # Régénération de la vie
+            if pnj.stat[6] < 100:
+                pnj.stat[6] += 5
+                if pnj.stat[6] > max_pv: pnj.stat[6] = max_pv
+
+            # régénération de la mana
+            if pnj.stat[7] < 5 and pnj.state != 3:
+                pnj.stat[7] += 1
+                if pnj.stat[7] > max_mana: pnj.stat[7] = max_mana
+
+            # Empoisonné
+            if pnj.state == 1:
+                pnj.stat[6] -= random(1, 10)
+
+            # Inconscient
+            if pnj.state == 2:
+                pnj.state = 0
+            
+            # Blessé
+            if pnj.state == 3 and pnj.stat[6] >= 80:
+                pnj.state = 0
+            
+            # Endormi
+            if pnj.state == 4:
+                pnj.state = 0
+            
+        if len(pnj_names) == 1:
+            await ctx.send(f"__{pnj_names[0]}__ a dormi.")
+        elif len(pnj_names) > 1:
+            await ctx.send(f"__{', '.join(pnj_names)}__ ont dormi.")
+        self.save_game()
 
 
 
