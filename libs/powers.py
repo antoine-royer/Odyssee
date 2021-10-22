@@ -114,7 +114,8 @@ def power_use(power_id):
         vitesse,
         charge,
         pourfendre,
-        andidote
+        andidote,
+        chant_de_guerre,
     )[power_id]
 
 
@@ -142,14 +143,15 @@ def effroi(user, players, target=None):
 
 def guerison(user, players, target=None):
     msg = ""
+    pts = user.get_level() * 10
 
     for player_id in players:
         if player_id < 0: next
 
         player = players[player_id]
         if player.place == user.place and player.stat[6] < 100:
-            player.stat[6] = 100
-            msg += f" - __{player.name}__ a retrouvé 100 points de Vie.\n"
+            player.stat[6] += pts
+            msg += f" - __{player.name}__ a retrouvé {pts} points de Vie.\n"
 
     return msg
 
@@ -163,9 +165,9 @@ def chant(user, players, target=None):
 
         player = players[player_id]
         if player.place == user.place:
-            player.stat[0] += pts
-            player.stat[1] += pts
-            msg += f" - __{player.name}__ gagne en force et en courage.\n"
+            player.stat[2] += pts
+            player.stat[3] += pts
+            msg += f" - __{player.name}__ gagne en habileté et en rapidité.\n"
     return msg
 
 
@@ -267,9 +269,25 @@ def pourfendre(user, players, target=None):
     else:
         return f"__{target.name}__ fait un bond en arrière."
 
-def antidote(user, player, target=None):
+
+def antidote(user, players, target=None):
     if target.state == 1:
         target.state = 0
         return f"__{target.name}__ n'est plus empoisonné."
     else:
         return f"__{target.name}__ n'était pas empoisonné."
+
+
+def chant_de_guerre(user, players, target=None):
+    msg = ""
+    pts = user.get_level() * 5
+
+    for player_id in players:
+        if player_id < 0: next
+
+        player = players[player_id]
+        if player.place == user.place:
+            player.stat[0] += pts
+            player.stat[1] += pts
+            msg += f" - __{player.name}__ gagne en force et en courage.\n"
+    return msg
