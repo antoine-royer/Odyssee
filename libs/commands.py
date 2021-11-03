@@ -555,7 +555,7 @@ class OdysseeCommands(commands.Cog):
                     misc += f"`{name}.: {get_type_by_id(obj.object_type)}`\n"
                 else:
                     name = name.split("#")
-                    misc += f"`{name[0]}.: {obj.stat[index + 4]}{name[1]}`\n"
+                    misc += f"`{name[0]}.: {obj.stat[index + 5]}{name[1]}`\n"
 
             embed.add_field(name="Caractéristiques", value=capacity)
             embed.add_field(name="Divers", value=misc)
@@ -583,7 +583,9 @@ class OdysseeCommands(commands.Cog):
         shop_id = player.in_shop()
         if shop_id == -1: await send_error(ctx, f"__{player.name}__ n'est pas dans un magasin"); return
 
-        obj = get_object(get_official_name(nom.lower()), shop_id)
+        obj = get_official_name(nom.lower())
+        print(obj)
+        obj = get_object(obj, shop_id)
         if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return
 
         if obj.object_type not in (1, 5) or nombre < 1: nombre = 1
@@ -814,33 +816,33 @@ class OdysseeCommands(commands.Cog):
             return
 
         lvl = player.get_level()
-        max_mana, max_pv = lvl * 5, lvl * 100
+        max_mana = lvl * 5
         
         # Régénération de la vie
-        if player.stat[6] < 100:
-            player.stat[6] += 5
-            if player.stat[6] > max_pv: player.stat[6] = max_pv
+        if player.stat[6] < 100 + (lvl - 1) * 50:
+            player.stat[6] += 5 * lvl
 
         # régénération de la mana
-        if player.stat[7] < 5 and player.state != 3:
-            player.stat[7] += 1
-            if player.stat[7] > max_mana: player.stat[7] = max_mana
+        if player.state != 3 and player.stat[7] < 5 + (lvl - 1):
+            player.stat[7] += 1 + (lvl // 2)
 
         # Empoisonné
         if player.state == 1:
-            player.stat[6] -= random(1, 10)
+            player.stat[6] -= random(0, 5 * lvl)
 
         # Inconscient
         if player.state == 2:
             player.state = 0
         
         # Blessé
-        if player.state == 3 and player.stat[6] >= 80:
+        if player.state == 3 and player.stat[6] >= 100:
             player.state = 0
         
         # Endormi
         if player.state == 4:
             player.state = 0
+
+        await ctx.send(f"__{player.name}__ se repose.")
 
 
     @commands.command(name="état", help=f"Vous permet de changer votre état parmi : {', '.join(get_states_list())}", brief="Changer d'état")

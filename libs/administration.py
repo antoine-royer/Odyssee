@@ -228,10 +228,10 @@ class AdminCommands(commands.Cog):
         self.save_game()
 
         with open("save.txt", "r") as file:
-            await ctx.send(f"**Sauvegarde**\n```\n{file.read()}```")
+            await ctx.send(f"**Sauvegarde**", file=discord.File("save.txt"))
 
 
-    @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.", brief="Ajouter un objet")
+    @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.\n\n__Magasins :__\n" + "\n".join([f"{index} - {value[0]}" for index, value in enumerate(get_shop_name())]) + "\n\n__Types :__\n" + "\n".join([f"{index} - {value}" for index, value in get_all_types()]), brief="Ajouter un objet")
     @commands.check(is_admin)
     async def ajout_objet(self, ctx, magasin: int, type_objet: int, nom: str, courage: int, force: int, habilete: int, rapidite: int, intelligence: int, defense: int, vie: int, mana: int, argent: int, poids: int):
         check = get_official_name(nom)
@@ -311,28 +311,26 @@ class AdminCommands(commands.Cog):
             pnj_names.append(pnj.name)
 
             lvl = pnj.get_level()
-            max_mana, max_pv = lvl * 5, lvl * 100
+            max_mana = lvl * 5
             
             # Régénération de la vie
-            if pnj.stat[6] < 100:
-                pnj.stat[6] += 5
-                if pnj.stat[6] > max_pv: pnj.stat[6] = max_pv
+            if pnj.stat[6] < 100 + (lvl - 1) * 50:
+                pnj.stat[6] += 5 * lvl
 
             # régénération de la mana
-            if pnj.stat[7] < 5 and pnj.state != 3:
-                pnj.stat[7] += 1
-                if pnj.stat[7] > max_mana: pnj.stat[7] = max_mana
+            if pnj.state != 3 and pnj.stat[7] < 5 + (lvl - 1):
+                pnj.stat[7] += 1 + (lvl // 2)
 
             # Empoisonné
             if pnj.state == 1:
-                pnj.stat[6] -= random(1, 10)
+                pnj.stat[6] -= random(0, 5 * lvl)
 
             # Inconscient
             if pnj.state == 2:
                 pnj.state = 0
             
             # Blessé
-            if pnj.state == 3 and pnj.stat[6] >= 80:
+            if pnj.state == 3 and pnj.stat[6] >= 100:
                 pnj.state = 0
             
             # Endormi
