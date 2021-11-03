@@ -469,7 +469,7 @@ class OdysseeCommands(commands.Cog):
                 await send_error(ctx, f"__{player.name}__ ne possède pas le pouvoir : '{nom}'")
                 return
 
-            if player.stat[7] <= 0 or player.capacity_roll(4) == 0:
+            if player.stat[7] <= 0:
                 await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue.")
                 return
 
@@ -732,19 +732,50 @@ class OdysseeCommands(commands.Cog):
                     else:
                         player.inventory[arrow_index].quantity -= 1
 
-            # si il s'agit d'un objet quelconque
+            # s'il s'agit d'un objet quelconque
             else:
-                player_weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
+                player_weapon = player.inventory[index]
         
+        # Si aucune arme n'a été précisée
         else:
             if target.place != player.place:
                 await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit")
                 return
-            else: player_weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
+            else: player_weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
 
         # Arme de l'adversaire
         target_can_fight, target_weapon = weapon_select(target)
-        if target_weapon.object_type == 3 and target.place != player.place: target_can_fight = False
+        if target_weapon.object_type != 4 and target.place != player.place: target_can_fight = False
+
+        capacities = list(get_capacities()[:6])
+        capacities.insert(0, "Capacités")
+
+        max_lgth = len(capacities[0])
+
+        player_capacities = [player.name]
+        player_max_lgth = len(player.name)
+
+        target_capacities = [target.name]
+        target_max_lgth = len(target.name)
+
+        pml, tml = 0, 0
+        for i in range(len(capacities)):
+            pml = max(pml, len(str(player.stat[i])))
+            tml = max(tml, len(str(target.stat[i])))
+
+        for index in range(len(capacities)):
+            max_lgth = max(len(capacities[index]), max_lgth)
+
+            player_capacities.append(f"{player.stat[index]}{' ' * (pml - len(str(player.stat[index])))} [{('', '+')[player_weapon.stat[index] >= 0]}{player_weapon.stat[index]}]")
+            player_max_lgth = max(len(player_capacities[-1]), player_max_lgth)
+
+            target_capacities.append(f"{target.stat[index]}{' ' * (tml - len(str(target.stat[index])))} [{('', '+')[target_weapon.stat[index] >= 0]}{target_weapon.stat[index]}]")
+            target_max_lgth = max(len(target_capacities[-1]), target_max_lgth)
+
+        message = f"```\n"
+        
+        for index, name in enumerate(capacities):
+            message += f"{name.capitalize() + ' ' * (max_lgth - len(name))} | {player_capacities[index] + ' ' * (player_max_lgth - len(player_capacities[index]))} | {target_capacities[index] + ' ' * (target_max_lgth - len(target_capacities[index]))}\n"
 
         player.stat_add(player_weapon.stat)
         target.stat_add(target_weapon.stat)
@@ -752,7 +783,7 @@ class OdysseeCommands(commands.Cog):
         # Qui commence
         fighters, target_index = phase_1(player, target)
 
-        message = ""
+        message += "```\n"
 
         for attacker in range(2):
             defender = (attacker + 1) % 2
@@ -762,8 +793,11 @@ class OdysseeCommands(commands.Cog):
                 message += f"__{fighters[target_index].name}__ ne peut pas se battre.\n"
                 turn = False
 
+            end = False
             if turn:
                 message += f"__{fighters[attacker].name}__ attaque"
+                if attacker == target_index: message += f" avec {target_weapon.name}"
+                else: message += f" avec {player_weapon.name}"
 
                 if phase_2(fighters[attacker]):
                     message += " et touche sa cible.\n"
@@ -775,7 +809,6 @@ class OdysseeCommands(commands.Cog):
                     else:
                         message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
 
-                    end = False
                     if not fighters[defender].isalive():
                         loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
                         if fighters[defender].stat[8]:

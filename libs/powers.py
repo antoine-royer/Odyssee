@@ -112,9 +112,9 @@ def power_use(power_id):
         protection,
         fatigue,
         vitesse,
-        charge,
         pourfendre,
-        andidote,
+        charge,
+        antidote,
         chant_de_guerre,
     )[power_id]
 
@@ -183,7 +183,7 @@ def poison(user, players, target=None):
     pts = 10 * user.get_level()
     if target.stat[6] > pts:
         target.state = 1
-        target.capacity_modify(5, -pts)
+        target.capacity_modify(6, -pts)
         return f"__{target.name}__ perd {pts} points de Vie."
     else:
         target.state = 2
@@ -193,7 +193,7 @@ def poison(user, players, target=None):
 
 def regeneration(user, players, target=None):
     pts = 3 * user.get_level()
-    for capacity_index in range(4):  # From Courage to Rapidity
+    for capacity_index in range(5):  # From Courage to Rapidity
         user.capacity_modify(capacity_index, pts)
     return f"__{user.name}__ se régénère."
 
@@ -257,7 +257,7 @@ def charge(user, players, target=None):
     user.stat[7] += 1
 
     if target.stat[6] > pts:
-        target.stat[6] -= pts
+        target.capacity_modify(6, -pts)
         return f"__{user.name}__ se jette sur __{target.name}__."
     else:
         target.state = 2
@@ -269,7 +269,7 @@ def pourfendre(user, players, target=None):
     pts = int(user.stat[2] * 1.5)
 
     if target.stat[6] > pts:
-        target.stat[6] -= pts
+        target.capacity_modify(6, -pts)
         return f"__{target.name}__ se fait transpercer."
     else:
         target.state = 2
@@ -294,7 +294,7 @@ def chant_de_guerre(user, players, target=None):
 
         player = players[player_id]
         if player.place == user.place:
-            player.stat[0] += pts
-            player.stat[1] += pts
+            player.capacity_modify(0, pts)
+            player.capacity_modify(1, pts)
             msg += f" - __{player.name}__ gagne en force et en courage.\n"
     return msg

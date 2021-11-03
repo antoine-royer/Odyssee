@@ -15,8 +15,8 @@ async def is_admin(ctx):
 
 class AdminCommands(commands.Cog):
     def __init__(self, config, savefile):
-        global guild_id, data_admin
-        self.data_player, self.data_kick, guild_id = savefile
+        global data_admin
+        self.data_player, self.data_kick, self.guild_id = savefile
         self.PREFIX = config["PREFIX"]
         data_admin = config["ADMIN"]
 
@@ -25,7 +25,7 @@ class AdminCommands(commands.Cog):
         for player_id in self.data_player:
             player = self.data_player[player_id]
             player.max_weight = 5 * (player.stat[1] + 1)
-        export_save(self.data_player, self.data_kick, guild_id)
+        export_save(self.data_player, self.data_kick, self.guild_id)
 
 
     def get_player_from_id(self, player_id):
@@ -118,7 +118,7 @@ class AdminCommands(commands.Cog):
         except: pass
 
         capacite = capacite.lower()
-        capacities = ("courage", "force", "habileté", "rapidité", "intelligence", "défense", "vie", "mana", "argent")
+        capacities = get_capacities()
         
         if capacite in capacities:
             player.stat[capacities.index(capacite)] += valeur
@@ -152,7 +152,6 @@ class AdminCommands(commands.Cog):
             else: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{valeur}' ou pas en assez grande quantité")
 
         elif capacite == "état":
-            print(valeur)
             state = get_state_by_name(valeur)
             if state + 1:
                 player.state = state
@@ -162,15 +161,38 @@ class AdminCommands(commands.Cog):
         
         self.save_game()
 
+    @commands.command(help="Permet de modifier les statistiques d'un objet possédé par un joueur.", brief="Permet de modifier les caractéristique d'une arme")
+    @commands.check(is_admin)
+    async def modifier_objet(self, ctx, nom: str, objet:str, capacite: str, valeur: int):
+        player_id = self.get_player_from_name(nom)
+        if not player_id: await send_error(ctx, f"le joueur : '{nom}' n'existe pas"); return
+
+        player = self.data_player[player_id]
+        index, obj = player.have(objet)
+        
+        if index == -1:
+            await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{objet}'")
+        else:
+            capacities = get_capacities()
+
+            capacite = capacite.lower()
+            if capacite in capacities:
+                cap_index = capacities.index(capacite)
+                player.inventory[index].stat[cap_index] += valeur
+                if obj.object_type == 0: player.stat[cap_index] += valeur
+                await ctx.send(f"L'objet '{objet}' de __{player.name}__ {('perd', 'gagne')[valeur > 0]} {valeur} point{('', 's')[valeur > 1]} en {capacite.capitalize()}.")
+            else:
+                await send_error(ctx, f"'{capacite}' n'est pas une capacité connue")
+
+        self.save_game()
+
 
     @commands.command(help="Supprime la totalité de la sauvegarde du jeu en cours.", brief="Supprime la sauvegarde")
     @commands.check(is_admin)
     async def formatage(self, ctx):
-        global guild_id
-
         self.data_player.clear()
         self.data_kick.clear()
-        guild_id = 0
+        self.guild_id = 0
 
         await ctx.send("Partie supprimée.")
         self.save_game()

@@ -29,6 +29,9 @@ def roll_die(faces = 20, nb = 1):
     return randint(nb, nb * faces)
 
 
+def get_capacities():
+    return ("courage", "force", "habileté", "rapidité", "intelligence", "défense", "vie", "mana", "argent")
+
 # Player : contient les infos des joueurs (PnJ compris)
 class Player:
     def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", inventory=None, note=None, power=None, state=0, abilities=None):

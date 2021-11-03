@@ -110,7 +110,7 @@ def weapon_select(player):
 
     else: can_fight = True
 
-    if weapon == -1: weapon = Object("", "", [int(i == 8) for i in range(9)], -1, -1)
+    if weapon == -1: weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
     else: weapon = player.inventory[weapon]
     
     if weapon.object_type == 4:

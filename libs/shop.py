@@ -8,7 +8,7 @@ class Object:
     def __init__(self, name, official_name, stat, object_type, shop_id, quantity=-1):
         self.name = name
         self.official_name = official_name
-        self.stat = stat
+        self.stat = list(stat)
         self.object_type = object_type
         self.shop_id = shop_id
         self.quantity = quantity
@@ -60,7 +60,7 @@ def get_object(object_name, shop_id=None):
 
     if database:
         database = database[0]
-        return Object(object_name, database[0], database[1: -2], database[-2], database[-1]) 
+        return Object(object_name, database[0], list(database[1: -2]), database[-2], database[-1]) 
     else:
         return Object(object_name, object_name, [int(i == 9) for i in range(10)], -1, -1)
 
