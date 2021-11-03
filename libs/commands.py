@@ -273,7 +273,7 @@ class OdysseeCommands(commands.Cog):
         embed = discord.Embed(title="Joueurs", description="Liste des joueurs enregistrés", color=player.stat[10])
         for player_id in self.data_player:
             player = self.data_player[player_id]
-            embed.add_field(name=f"{player.name}", value=f"{player.species} de niveau {player.get_level()} vers {player.place}{('', ' (PnJ)')[player.id <= 0]}\n[{player.get_state()}]", inline=False)
+            embed.add_field(name=f"{player.name}{('', ' (PnJ)')[player.id <= 0]}", value=f"{player.species} de niveau {player.get_level()} vers {player.place}\n[{player.get_state()}]", inline=False)
         
         await ctx.send(embed=embed)
 
@@ -830,17 +830,14 @@ class OdysseeCommands(commands.Cog):
         if player.state == 1:
             player.stat[6] -= random(0, 5 * lvl)
 
-        # Inconscient
-        if player.state == 2:
+        # Inconscient, endormi
+        if player.state in (2, 4):
             player.state = 0
         
         # Blessé
         if player.state == 3 and player.stat[6] >= 100:
             player.state = 0
         
-        # Endormi
-        if player.state == 4:
-            player.state = 0
 
         await ctx.send(f"__{player.name}__ se repose.")
 

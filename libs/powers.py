@@ -186,7 +186,9 @@ def poison(user, players, target=None):
         target.capacity_modify(5, -pts)
         return f"__{target.name}__ perd {pts} points de Vie."
     else:
-        return f"__{target.name}__ est immunisé."
+        target.state = 2
+        target.stat[6] = 1
+        return f"__{target.name}__ tombe au sol, incapable de bouger."
 
 
 def regeneration(user, players, target=None):
@@ -210,7 +212,9 @@ def boule_de_feu(user, players, target=None):
             target.capacity_modify(capacity_index, -pts)
         return f"__{target.name}__ est atteint par la boule de feu !"
     else:
-        return f"__{target.name}__ parvient à échapper à la boule de feu."
+        target.state = 2
+        target.stat[6] = 1
+        return f"__{target.name}__ s'effondre au sol."
 
 
 def corne_abondance(user, players, target=None):
@@ -257,6 +261,7 @@ def charge(user, players, target=None):
         return f"__{user.name}__ se jette sur __{target.name}__."
     else:
         target.state = 2
+        target.stat[6] = 1
         return f"__{target.name}__ tombe au sol."
 
 
@@ -267,7 +272,9 @@ def pourfendre(user, players, target=None):
         target.stat[6] -= pts
         return f"__{target.name}__ se fait transpercer."
     else:
-        return f"__{target.name}__ fait un bond en arrière."
+        target.state = 2
+        target.stat[6] = 1
+        return f"Choqué par la douleur, __{target.name}__ s'évanouit"
 
 
 def antidote(user, players, target=None):

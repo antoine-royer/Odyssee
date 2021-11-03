@@ -205,12 +205,12 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Charge la sauvegarde donnée en argument.", brief="Charger une partie")
     @commands.check(is_admin)
-    async def charger(self, ctx, sauvegarde: str):
+    async def charger(self, ctx):
         global guild_id
         self.data_player.clear()
         self.data_kick.clear()
 
-        data_player, data_kick, guild_id = eval(sauvegarde)
+        data_player, data_kick, guild_id = eval(await ctx.message.attachments[0].read())
         
         for player in data_player:
             self.data_player.update({player[0]: Player(*player)})
