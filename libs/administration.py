@@ -151,6 +151,12 @@ class AdminCommands(commands.Cog):
             if check: await ctx.send(f"__{player.name}__ a perdu l'objet : '{valeur}'{nombre}.")
             else: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{valeur}' ou pas en assez grande quantité")
 
+        elif capacite == "pouvoir+":
+            pass
+
+        elif capacite == "pouvoir-":
+            pass
+
         elif capacite == "état":
             state = get_state_by_name(valeur)
             if state + 1:
@@ -272,54 +278,96 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Un joueur se fait attaquer par un PnJ", brief="Attaquer un joueur")
     @commands.check(is_admin)
-    async def attaque(self, ctx, pnj: str, joueur: str):
-        fighter = self.get_player_from_name(pnj)
-        if not fighter: await send_error(ctx, f"{pnj} n'existe pas") ; return
-        fighter = self.data_player[fighter]
-        if fighter.id > 0 or fighter.state in (2, 4): await send_error(ctx, f"__{pnj}__ n'est pas un PnJ ou n'est pas en état de se battre") ; return
+    async def pnj_combat(self, ctx, joueur: str, adversaire: str, arme: str=None):
+        pnj = self.get_player_from_name(joueur)
+        if not pnj: await send_error(ctx, f"{joueur} n'existe pas") ; return
+        pnj = self.data_player[pnj]
+        if pnj.id > 0 or pnj.state in (2, 4): await send_error(ctx, f"__{pnj.name}__ n'est pas un PnJ ou n'est pas en état de se battre") ; return
 
-        player = self.get_player_from_name(joueur)
-        if not player: await send_error(ctx, f"{joueur} n'est pas un joueur enregistré") ; return
-        player = self.data_player[player]
+        target = self.get_player_from_name(adversaire)
+        if not target: await send_error(ctx, f"{adversaire} n'est pas un joueur enregistré") ; return
+        target = self.data_player[target]
 
-        fighter, weapon = weapon_select(fighter)
-        if weapon.object_type == 3 and fighter.place != player.place:
-            await send_error(ctx, f"__{fighter.name}__ et __{player.name}__ ne sont pas au même endroit") ; return
+        # Arme du joueur
+        if arme:
+            pnj_weapon, check = weapon_check(pnj, target, arme)
+            if check == 1: await send_error(ctx, f"__{pnj.name}__ ne possède pas l'objet : '{arme}'"); return
+            elif check == 2: await send_error(ctx, f"__{pnj.name}__ et __{target.name}__ ne sont pas au même endroit"); return
+            elif check == 3: await send_error(ctx, f"__{pnj.name} n'a pas de projectile pour tirer"); return
 
-        fighter.stat_add(weapon.stat)
+        else:
+            if target.place != pnj.place:
+                await send_error(ctx, f"__{pnj.name}__ et __{target.name}__ ne sont pas au même endroit")
+                return
+        
+        if not pnj_weapon: pnj_weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
+
+        # Arme de l'adversaire
+        target_can_fight, target_weapon = weapon_select(target)
+        if target_weapon.object_type != 4 and target.place != pnj.place: target_can_fight = False
+
+
+        pnj.stat_add(pnj_weapon.stat)
+        target.stat_add(target_weapon.stat)
 
         message = ""
 
-        if phase_2(fighter):
-            damage = phase_3((fighter, player), 0, 1)
-            message += f"__{fighter.name}__ attaque __{player.name}__.\n"
+        fighters, target_index = phase_1(pnj, target)
 
-            if damage:
-                player.stat[6] -= damage
-                message += f"__{player.name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
+        for attacker in range(2):
+            defender = (attacker + 1) % 2
 
-                if not player.isalive():
-                    loot = f"__{player.name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
-                    if player.stat[8]:
-                       loot += f" ❖ {player.stat[8]} Drachme{('', 's')[player.stat[8] > 1]}\n"
+            turn = True
+            if attacker == target_index and not target_can_fight:
+                message += f"__{fighters[target_index].name}__ ne peut pas se battre.\n"
+                turn = False
 
-                    fighter.stat[8] += player.stat[8]
+            end = False
+            if turn:
+                message += f"__{fighters[attacker].name}__ attaque"
+                if attacker == target_index: message += f" avec {target_weapon.name}"
+                else: message += f" avec {pnj_weapon.name}"
+
+                if phase_2(fighters[attacker]):
+                    message += " et touche sa cible.\n"
+
+                    damage = phase_3(fighters, attacker, defender)
                     
-                    for obj in player.inventory:
-                        check = fighters[attacker].object_add(obj.name, obj.quantity)
-                        if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
+                    if damage:
+                        fighters[defender].state = get_state_by_name("blessé")
+                        message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
+                    
+                    else:
+                        message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
 
-                    self.data_player.pop(player.id)
 
-                    message += loot
-            
-            else: message += f"__{player.name}__ esquive le coup."
+                    if not fighters[defender].isalive():
+                        loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
+                        
+                        if fighters[defender].stat[8]:
+                            loot += f" ❖ {fighters[defender].stat[8]} Drachme{('', 's')[fighters[defender].stat[8] > 1]}\n"
+                            fighters[attacker].stat[8] += fighters[defender].stat[8]
+                        
+                        for obj in fighters[defender].inventory:
+                            check = fighters[attacker].object_add(obj.name, obj.quantity)
+                            if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
 
-        else: message += f"__{fighter.name}__ rate son coup."
+                        self.data_player.pop(fighters[defender].id)
 
-        fighter.stat_sub(weapon.stat)
+                        message += loot
+                        end = True
+                else:
+                    message += f" et manque sa cible.\n"
+
+            if end: break
+
         await ctx.send(message)
+
+        pnj.stat_sub(pnj_weapon.stat)
+        target.stat_sub(target_weapon.stat)
+
         self.save_game()
+
 
     @commands.command(help="Fait passer la nuit pour tous les PnJ", brief="Fait dormir les PnJ")
     @commands.check(is_admin)
@@ -361,7 +409,46 @@ class AdminCommands(commands.Cog):
             await ctx.send(f"__{pnj_names[0]}__ a dormi.")
         elif len(pnj_names) > 1:
             await ctx.send(f"__{', '.join(pnj_names)}__ ont dormi.")
+        
         self.save_game()
 
 
+    @commands.command(help="Permet de faire en sorte qu'un PnJ utilise un de ses pouvoirs", brief="Utiliser un pouvoir d'un PnJ")
+    @commands.check(is_admin)
+    async def pnj_pouvoir(self, ctx, joueur: str, nom: str, adversaire: str=None):
+        pnj = self.get_player_from_name(joueur)
+        if not pnj: await send_error(ctx, f"{joueur} n'est pas un joueur enregistré"); return
+        pnj = self.data_player[pnj]
+        if pnj.id > 0 or pnj.state in (2, 4): await send_error(ctx, f"__{pnj.name}__ n'est pas un PnJ ou n'est pas en état de se battre") ; return
 
+
+        if adversaire:
+            name = adversaire
+            adversaire = self.get_player_from_name(adversaire)
+            if not adversaire: await send_error(ctx, f"{name} n'est pas un joueur enregistré"); return
+            adversaire = self.data_player[adversaire]
+
+        if nom:
+            power = get_power_by_name(nom.lower())
+            nom = nom.capitalize()
+
+            if not power:
+                await send_error(ctx, f"le pouvoir '{nom}' n'existe pas")
+                return
+
+            if power.power_id not in [i.power_id for i in pnj.power]:
+                await send_error(ctx, f"__{pnj.name}__ ne possède pas le pouvoir : '{nom}'")
+                return
+
+            if pnj.stat[7] <= 0:
+                await ctx.send(f"__{pnj.name}__ tente d'utiliser {nom}, mais échoue.")
+                return
+
+            if power.enemy and not adversaire:
+                await send_error(ctx, f"le sort '{nom}' nécessite une cible")
+                return
+
+            pnj.stat[7] -= 1
+            await ctx.send(f"__{pnj.name}__ utilise {nom} :\n" + power_use(power.power_id)(pnj, self.data_player, adversaire))
+
+        self.save_game()

@@ -146,8 +146,6 @@ def guerison(user, players, target=None):
     pts = user.get_level() * 10
 
     for player_id in players:
-        if player_id < 0: next
-
         player = players[player_id]
         if player.place == user.place and player.stat[6] < 100:
             player.stat[6] += pts
@@ -161,8 +159,6 @@ def chant(user, players, target=None):
     pts = 5 * user.get_level()
 
     for player_id in players:
-        if player_id < 0: next
-
         player = players[player_id]
         if player.place == user.place:
             player.stat[2] += pts
@@ -218,7 +214,7 @@ def boule_de_feu(user, players, target=None):
 
 
 def corne_abondance(user, players, target=None):
-    pts = 10 * user.get_level()
+    pts = 5 * user.get_level()
     if user.stat[8] < 20 * user.get_level():
         user.capacity_modify(7, pts)
         return f"__{user.name}__ gagne {pts} Drachmes."
@@ -290,8 +286,6 @@ def chant_de_guerre(user, players, target=None):
     pts = user.get_level() * 5
 
     for player_id in players:
-        if player_id < 0: next
-
         player = players[player_id]
         if player.place == user.place:
             player.capacity_modify(0, pts)

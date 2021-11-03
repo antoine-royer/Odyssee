@@ -454,8 +454,9 @@ class OdysseeCommands(commands.Cog):
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
         if adversaire:
+            name = adversaire
             adversaire = self.get_player_from_name(adversaire)
-            if not adversaire: await send_error(ctx, f"{adversaire} n'est pas un joueur enregistré"); return
+            if not adversaire: await send_error(ctx, f"{name} n'est pas un joueur enregistré"); return
 
         if nom:
             power = get_power_by_name(nom.lower())
@@ -708,45 +709,23 @@ class OdysseeCommands(commands.Cog):
 
         # Vérification de l'arme du joueur
         if arme:
-            index, player_weapon = player.have(arme)
+            player_weapon, check = weapon_check(player, target, arme)
+            if check == 1: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{arme}'"); return
+            elif check == 2: await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit"); return
+            elif check == 3: await send_error(ctx, f"__{player.name} n'a pas de projectile pour tirer"); return
 
-            # si le joueur n'a pas l'arme demandée
-            if index == -1:
-                await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{arme}'")
-                return
-
-            # si c'est une arme connue
-            elif player_weapon.object_type in (3, 4):
-
-                # arme de mêlée => même lieu
-                if player_weapon.object_type == 3 and target.place != player.place:
-                    await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit")
-                    return
-
-                # arme à distance => nécessite un projectile
-                if player_weapon.object_type == 4:
-                    arrow_index = player.select_object_by_type(5)
-                    if arrow_index == -1:
-                        await send_error(ctx, f"__{player.name} n'a pas de projectile pour tirer")
-                        return
-                    else:
-                        player.inventory[arrow_index].quantity -= 1
-
-            # s'il s'agit d'un objet quelconque
-            else:
-                player_weapon = player.inventory[index]
-        
         # Si aucune arme n'a été précisée
-        else:
-            if target.place != player.place:
+        elif target.place != player.place:
                 await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit")
                 return
-            else: player_weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
+        else:
+            player_weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
 
         # Arme de l'adversaire
         target_can_fight, target_weapon = weapon_select(target)
         if target_weapon.object_type != 4 and target.place != player.place: target_can_fight = False
 
+        # Affichage des statistiques et des modificateurs
         capacities = list(get_capacities()[:6])
         capacities.insert(0, "Capacités")
 
@@ -777,13 +756,13 @@ class OdysseeCommands(commands.Cog):
         for index, name in enumerate(capacities):
             message += f"{name.capitalize() + ' ' * (max_lgth - len(name))} | {player_capacities[index] + ' ' * (player_max_lgth - len(player_capacities[index]))} | {target_capacities[index] + ' ' * (target_max_lgth - len(target_capacities[index]))}\n"
 
+        message += "```\n"
+
         player.stat_add(player_weapon.stat)
         target.stat_add(target_weapon.stat)
 
         # Qui commence
         fighters, target_index = phase_1(player, target)
-
-        message += "```\n"
 
         for attacker in range(2):
             defender = (attacker + 1) % 2
@@ -811,10 +790,10 @@ class OdysseeCommands(commands.Cog):
 
                     if not fighters[defender].isalive():
                         loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
+                        
                         if fighters[defender].stat[8]:
-                           loot += f" ❖ {fighters[defender].stat[8]} Drachme{('', 's')[fighters[defender].stat[8] > 1]}\n"
-
-                        fighters[attacker].stat[8] += fighters[defender].stat[8]
+                            loot += f" ❖ {fighters[defender].stat[8]} Drachme{('', 's')[fighters[defender].stat[8] > 1]}\n"
+                            fighters[attacker].stat[8] += fighters[defender].stat[8]
                         
                         for obj in fighters[defender].inventory:
                             check = fighters[attacker].object_add(obj.name, obj.quantity)
