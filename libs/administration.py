@@ -259,12 +259,10 @@ class AdminCommands(commands.Cog):
         check = get_official_name(nom)
         if check: await send_error(f"l'objet : '{nom}' existe déjà"); return
 
-        table = sqlite3.connect("odyssee_shop.db")
+        table = sqlite3.connect("BDD/odyssee_shop.db")
         c = table.cursor()
 
-        c.execute(f"""
-            INSERT INTO objets VALUES ({magasin}, {type_objet}, {nom}, {courage}, {force}, {habilete}, {rapidité}, {intelligence}, {defense}, {vie}, {mana}, {argent}, {poids})
-        """)
+        c.execute(f"INSERT INTO objets VALUES ({magasin}, {type_objet}, '{nom}', {courage}, {force}, {habilete}, {rapidite}, {intelligence}, {defense}, {vie}, {mana}, {argent}, {poids})")
 
         table.commit()
         table.close()
