@@ -20,13 +20,37 @@ def clean(string):
 		end = string.find("]", start) + 2
 		string = string[: start] + string[end: ]
 
-	return string		
+	return " ".join([i for i in string.split(" ") if i])
+
+
+def get_properties(properties):
+	index = 0
+	while properties[index].name != "h2": index += 1
+	
+	clean_properties = []
+	write_index = -1
+	write_check = True
+	for i in properties[: index]:
+		if i.name == "h3":
+			clean_properties.append([])
+			write_index += 1
+			write_check = True
+			clean_properties[write_index].append(clean(i.text))
+		
+		else:
+			prop = clean(i.text)
+			if prop and not prop in clean_properties[write_index] and write_check:
+				clean_properties[write_index].append("\n".join([f" ❖ {j}" for j in prop.split("\n")]))
+				write_check = False
+
+	return clean_properties
 
 
 def wikiphyto_api(plant_name):
 	url = f"http://www.wikiphyto.org/wiki/{plant_name}"
 	page = requests.get(url)
 	status_code = page.status_code
+	url = page.url
 	page = BeautifulSoup(page.text, features="html5lib")
 	
 	check_code, suggestion = check_search(page)
@@ -48,17 +72,6 @@ def wikiphyto_api(plant_name):
 	if len(used_parts) > 1000: used_parts = used_parts[: 1000] + "…"
 	used_parts = [f" ❖ {clean(i)}" for i in used_parts.split("\n")]
 
+	properties = get_properties(page.find("span", {"id": "Propri.C3.A9t.C3.A9s"}).find_all_next())
 	
-	plant_properties = page.find("span", {"id": "Propri.C3.A9t.C3.A9s_de_la_plante"}).find_next().text
-	plant_properties = [f" ❖ {clean(i)}" for i in plant_properties.split("\n")[: 5] if i != "Propriétés du bourgeon"]
-	if not plant_properties: plant_properties = ["< aucune >"]
-
-	bud_properties = page.find("span", {"id": "Propri.C3.A9t.C3.A9s_du_bourgeon"}).find_next().text
-	bud_properties = [f" ❖ {clean(i)}" for i in bud_properties.split("\n")[: 5] if i != "Propriétés de l'huile essentielle"]
-	if not bud_properties: bud_properties = ["< aucune >"]
-
-	oil_properties = page.find("span", {"id": "Propri.C3.A9t.C3.A9s_de_l.27huile_essentielle"}).find_next().text
-	oil_properties = [f" ❖ {clean(i)}" for i in oil_properties.split("\n")[: 5] if i != "Indications"]
-	if not oil_properties: oil_properties = ["< aucune >"]
-	
-	return (clean(latin_name), description, used_parts, (plant_properties, bud_properties, oil_properties), img, url), 2
+	return (clean(latin_name), description, used_parts, properties, img, url), 2

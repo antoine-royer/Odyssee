@@ -883,15 +883,23 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(name="plante", help="Donne des informations sur la plante demandée (source : wikiphyto.org)", brief="Informations sur une plante")
     async def plante(self, ctx, nom: str):
-        result, check_code = wikiphyto_api(nom)
+        try: result, check_code = wikiphyto_api(nom)
+        except:
+            embed = discord.Embed(title=nom, description="Erreur", color=8421504)
+            embed.add_field(name="Erreur de formatage", value=f"Votre requête ne correspond pas à une plante ou la page correspondante n'est pas formatée de manière standard. Par conséquent Odyssée ne parvient pas à récupérer et analyser les données souhaitées.\nVous pouvez tout de même obtenir des informations en suivant le lien :\n> http://www.wikiphyto.org/wiki/{nom.replace(' ', '_')}")
+            await ctx.send(embed=embed)
+            return
+
         # homonymie
         if check_code == 0:
             embed = discord.Embed(title=nom, description=f"Plusieurs plantes correspondent à la recherche : '{nom}'", color=8421504)
             embed.add_field(name="Essayez un nom de plante suivant", value=" ❖ " + " ❖ ".join(result))
+       
         # pas de résultat
         elif check_code == 1:
             embed = discord.Embed(title=nom, description="Erreur", color=8421504)
             embed.add_field(name="Plante non trouvée", value=f"Aucune plante ne correspond à la recherche : '{nom}'")
+        
         # succès
         else:
             latin_name, description, used_parts, properties, img, url = result
@@ -900,9 +908,12 @@ class OdysseeCommands(commands.Cog):
             embed.set_footer(text=url)
             embed.add_field(name="Description et habitat", value="\n".join(description), inline=True)
             embed.add_field(name="Parties utilisées", value="\n".join(used_parts), inline=True)
-            embed.add_field(name="Propriétés de la plante", value="\n".join(properties[0]), inline=False)
-            embed.add_field(name="Propriétés du bourgeon", value="\n".join(properties[1]), inline=True)
-            embed.add_field(name="Propriétés de l'huile essentielle", value="\n".join(properties[2]), inline=True)
-
+            
+            for i in properties:
+                if len(i) > 1:
+                    if len(i[1]) > 1000: i[1] = i[1][: 1000] + "…"
+                    embed.add_field(name=i[0], value=i[1], inline=False)
+                else: embed.add_field(name=i[0], value="< aucune >", inline=False)
+            
         await ctx.send(embed=embed)
 
