@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from libs.players import *
 from libs.travel import *
 from libs.states import *
+from libs.wikiphyto import wikiphyto_api
 
 
 # --- Fonctions de sauvegarde --- #

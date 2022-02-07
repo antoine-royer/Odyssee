@@ -84,12 +84,24 @@ class OdysseeCommands(commands.Cog):
                 embed.add_field(name="Description", value=cmnd.help, inline=True)
             else:
                 embed.add_field(name="Erreur : commande inconnue", value=f"Entrez `{self.PREFIX}aide` pour avoir la liste des commandes.")
-        
+            
+            await ctx.send(embed=embed)
+
         else:
-            embed = discord.Embed(title="Rubrique d'aide", description=f"Entrez : `{self.PREFIX}aide <commande>` pour plus d'informations.", color=8421504)
+            fields = []
             for cmnd in self.get_commands():
-                embed.add_field(name=cmnd.brief, value=get_syntax(cmnd), inline=False)
-        await ctx.send(embed=embed)
+                fields.append((cmnd.brief, get_syntax(cmnd)))
+            
+            nb = len(fields) // 25 + 1
+            index = 1
+            while fields:
+                embed = discord.Embed(title=f"Rubrique d'aide ({index}/{nb})", description=f"Entrez : `{self.PREFIX}aide <commande>` pour plus d'informations.", color=8421504)
+                for field in fields[: 25]:
+                    embed.add_field(name=field[0], value=field[1], inline=False)
+                fields = fields[25: ]
+                index += 1
+                await ctx.send(embed=embed)
+
 
 
     @commands.command(help="Votre espèce est à préciser impérativement. Si aucun pseudonyme n'est précisé, Odyssée prendra votre nom d'utilisateur.", brief="Créer un nouveau joueur")
@@ -585,7 +597,6 @@ class OdysseeCommands(commands.Cog):
         if shop_id == -1: await send_error(ctx, f"__{player.name}__ n'est pas dans un magasin"); return
 
         obj = get_official_name(nom.lower())
-        print(obj)
         obj = get_object(obj, shop_id)
         if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return
 
@@ -869,3 +880,29 @@ class OdysseeCommands(commands.Cog):
             send_error(ctx, f"{nouvel_etat} n'est pas un état connu")
         
         self.save_game()
+
+    @commands.command(name="plante", help="Donne des informations sur la plante demandée (source : wikiphyto.org)", brief="Informations sur une plante")
+    async def plante(self, ctx, nom: str):
+        result, check_code = wikiphyto_api(nom)
+        # homonymie
+        if check_code == 0:
+            embed = discord.Embed(title=nom, description=f"Plusieurs plantes correspondent à la recherche : '{nom}'", color=8421504)
+            embed.add_field(name="Essayez un nom de plante suivant", value=" ❖ " + " ❖ ".join(result))
+        # pas de résultat
+        elif check_code == 1:
+            embed = discord.Embed(title=nom, description="Erreur", color=8421504)
+            embed.add_field(name="Plante non trouvée", value=f"Aucune plante ne correspond à la recherche : '{nom}'")
+        # succès
+        else:
+            latin_name, description, used_parts, properties, img, url = result
+            embed = discord.Embed(title=nom, description=latin_name, color=8421504)
+            if img: embed.set_image(url=img)
+            embed.set_footer(text=url)
+            embed.add_field(name="Description et habitat", value="\n".join(description), inline=True)
+            embed.add_field(name="Parties utilisées", value="\n".join(used_parts), inline=True)
+            embed.add_field(name="Propriétés de la plante", value="\n".join(properties[0]), inline=False)
+            embed.add_field(name="Propriétés du bourgeon", value="\n".join(properties[1]), inline=True)
+            embed.add_field(name="Propriétés de l'huile essentielle", value="\n".join(properties[2]), inline=True)
+
+        await ctx.send(embed=embed)
+
