@@ -63,6 +63,7 @@ def wikiphyto_api(plant_name):
 		img = None
 	
 	latin_name = page.find("span", {"id": "D.C3.A9nomination_latine_internationale"}).find_next().text
+	family = page.find("span", {"id": "Famille_botanique"}).find_next().text
 	
 	description = page.find("span", {"id": "Description_et_habitat"}).find_next().text
 	if len(description) > 1000: description = description[: 1000] + "…"
@@ -74,4 +75,4 @@ def wikiphyto_api(plant_name):
 
 	properties = get_properties(page.find("span", {"id": "Propri.C3.A9t.C3.A9s"}).find_all_next())
 	
-	return (clean(latin_name), description, used_parts, properties, img, url), 2
+	return (clean(latin_name), clean(family), description, used_parts, properties, img, url), 2

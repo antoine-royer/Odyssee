@@ -902,13 +902,13 @@ class OdysseeCommands(commands.Cog):
         
         # succès
         else:
-            latin_name, description, used_parts, properties, img, url = result
-            embed = discord.Embed(title=nom, description=latin_name, color=8421504)
+            latin_name, family, description, used_parts, properties, img, url = result
+            embed = discord.Embed(title=nom, description=f"Plus d'informations sur :\n> {url}", color=8421504)
             if img: embed.set_image(url=img)
-            embed.set_footer(text=url)
             embed.add_field(name="Description et habitat", value="\n".join(description), inline=True)
             embed.add_field(name="Parties utilisées", value="\n".join(used_parts), inline=True)
-            
+            embed.add_field(name="Famille botanique et nom latin", value=f"{family}{latin_name}", inline=True)
+
             for i in properties:
                 if len(i) > 1:
                     if len(i[1]) > 1000: i[1] = i[1][: 1000] + "…"
