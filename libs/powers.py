@@ -189,7 +189,7 @@ def poison(user, players, target=None):
 
 def regeneration(user, players, target=None):
     pts = 3 * user.get_level()
-    for capacity_index in range(5):  # From Courage to Rapidity
+    for capacity_index in range(5):  # From Courage to Intelligence
         user.capacity_modify(capacity_index, pts)
     return f"__{user.name}__ se régénère."
 
@@ -204,7 +204,7 @@ def charme(user, players, target=None):
 def boule_de_feu(user, players, target=None):
     pts = 10 * user.get_level()
     if target.stat[6] > pts:
-        for capacity_index in (0, 1, 5):
+        for capacity_index in (0, 1, 6):
             target.capacity_modify(capacity_index, -pts)
         return f"__{target.name}__ est atteint par la boule de feu !"
     else:

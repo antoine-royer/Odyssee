@@ -110,7 +110,6 @@ class AdminCommands(commands.Cog):
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
         player_id = self.get_player_from_name(nom)
-
         if not player_id: await send_error(ctx, f"le joueur : '{nom}' n'existe pas"); return
 
         player = self.data_player[player_id]
@@ -152,10 +151,26 @@ class AdminCommands(commands.Cog):
             else: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{valeur}' ou pas en assez grande quantité")
 
         elif capacite == "pouvoir+":
-            pass
+            check = player.power_add(valeur.lower())
+            valeur = valeur.capitalize()
+
+            if check == 0:
+                await send_error(ctx, f"le pouvoir '{valeur} n'existe pas")
+            elif check == 1:
+                await send_error(ctx, f"__{player.name}__ a déjà le pouvoir : '{valeur}' ou vous avez trop de pouvoirs")
+            else:
+                await ctx.send(f"__{player.name}__ apprend le pouvoir : '{valeur}'.")
 
         elif capacite == "pouvoir-":
-            pass
+            check = player.power_sub(nom.lower())
+            nom = nom.capitalize()
+
+            if check == 0:
+                await send_error(ctx, f"le pouvoir '{nom} n'existe pas")
+            elif check == 1:
+                await send_error(ctx, f"__{player.name}__ n'a pas le pouvoir : '{nom}'")
+            else:
+                await ctx.send(f"__{player.name}__ oublie le pouvoir : '{nom}'.")
 
         elif capacite == "état":
             state = get_state_by_name(valeur)
@@ -231,7 +246,7 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, "ce joueur n'est pas kické")
 
 
-    @commands.command(help="Charge la sauvegarde donnée en argument.", brief="Charger une partie")
+    @commands.command(help="Charge la sauvegarde donnée en argument. La sauvegarde doit être en fichier joint", brief="Charger une partie")
     @commands.check(is_admin)
     async def charger(self, ctx):
         global guild_id
