@@ -80,7 +80,8 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"le joueur : '{nom}' existe déjà")
         else:
             if niveau <= 0: niveau = randint(1, get_avg_level(self.data_player) + 2)
-            new_player_id = -(len(self.data_player) + 1)
+            new_player_id = min(self.data_player.keys()) - 1
+            if new_player_id > 0: new_player_id = -1
             
             stat = stat_gen([1 for _ in range(5)], niveau, True)
 
