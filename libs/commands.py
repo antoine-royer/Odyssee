@@ -711,6 +711,7 @@ class OdysseeCommands(commands.Cog):
         if not target:
             new_player_id = -(len(self.data_player) + 1)
             level = get_avg_level(self.data_player)
+
             stat = stat_gen([1 for _ in range(5)], randint(1, int(1.5 * level)), True)
             self.data_player.update({new_player_id : Player(new_player_id, adversaire, "Ennemi", "", stat, player.place)})
             self.save_game()

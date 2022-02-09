@@ -73,8 +73,8 @@ def get_categories():
 def phase_1(player, target):
     player_point, target_point = 0, 0
     while player_point == target_point:
-        player_point = player.stat[0] + player.stat[3] + randint(1, player.stat[1])
-        target_point = target.stat[0] + target.stat[3] + randint(1, targer.stat[1])
+        player_point = player.stat[0] + player.stat[3] + randint(1, 10)
+        target_point = target.stat[0] + target.stat[3] + randint(1, 10)
 
     if player_point > target_point:
         return (player, target), 1
@@ -83,7 +83,7 @@ def phase_1(player, target):
 
 
 def phase_2(fighter):
-    return fighter.capacity_roll(2) >= 0.5
+    return fighter.capacity_roll(2) >= 2 or fighter.capacity_roll(1) == 3
 
 
 def phase_3(fighters, attacker, defender):

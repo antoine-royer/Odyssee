@@ -75,19 +75,17 @@ class AdminCommands(commands.Cog):
 
     @commands.command(name="joueur+", help="Permet d'ajouter un personnage non jouable au jeu en cours. Préciser l'espèce du joueur et son nom.", brief="Ajouter un PnJ")
     @commands.check(is_admin)
-    async def joueur_plus(self, ctx, espece: str, nom: str):
-
-        level = get_avg_level(self.data_player) 
-
+    async def joueur_plus(self, ctx, nom: str, espece: str, niveau: int=0):
         if self.get_player_from_name(nom):
             await send_error(ctx, f"le joueur : '{nom}' existe déjà")
         else:
+            if niveau <= 0: niveau = randint(1, get_avg_level(self.data_player) + 2)
             new_player_id = -(len(self.data_player) + 1)
             
-            stat = stat_gen([1 for _ in range(5)], randint(1, level + 2), True)
+            stat = stat_gen([1 for _ in range(5)], niveau, True)
 
             self.data_player.update({new_player_id : Player(new_player_id, nom, espece, '', stat)})
-            await ctx.send(f"{nom}, un(e) {espece}, est apparu(e).")
+            await ctx.send(f"{nom}, un(e) {espece} de niveau {niveau}, est apparu(e).")
 
             self.save_game()
 
