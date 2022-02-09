@@ -438,7 +438,7 @@ class OdysseeCommands(commands.Cog):
             elif check == -1:
                 await ctx.send(f"__{player.name}__ n'a pas réussi à apprendre la compétence : '{capacite}'.")
 
-            elif dir_score >= 10 :
+            elif die_score >= 10 :
                 await ctx.send(f"__{player.name}__ a réussi son lancer de compétence : '{capacite}'.")
 
             elif die_score > 5:

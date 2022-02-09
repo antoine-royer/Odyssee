@@ -179,6 +179,24 @@ class AdminCommands(commands.Cog):
                 await ctx.send(f"__{player.name}__ devient {valeur}.")
             else:
                 await send_error(ctx, f"{valeur} n'est pas un état connu")
+
+        elif capacite == "compétence+":
+            check = player.have_abilities(valeur)
+            if player.add_abilities(valeur, check) == 1:
+                await ctx.send(f"__{player.name}__ gagne la compétence : '{valeur}'.")
+            else:
+                await ctx.send(f"__{player.name}__ gagne un point sur la compétence : '{valeur}'.")
+
+        elif capacite == "compétence-":
+            check = player.have_abilities(valeur)
+            if check == -1:
+                await send_error(ctx, f"__{player.name}__ ne possède pas la compétence : '{valeur}'")
+            else:
+                if player.sub_abilities(valeur, check) == 1:
+                    await ctx.send(f"__{player.name}__ a perdu la compétence : '{valeur}'.")
+                else:
+                    await ctx.send(f"__{player.name}__ a perdu un point sur la compétence : '{valeur}'.")
+
         
         self.save_game()
 

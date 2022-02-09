@@ -247,6 +247,7 @@ class Player:
         self.abilities[index][1] -= 1
 
         if self.abilities[index][1] == 0:
+            self.abilities.pop(index)
             return 1 # le joueur perd la compétence
         else:
             return 2 # le joueur perd un point
