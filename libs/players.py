@@ -18,7 +18,7 @@ def stat_gen(factor, level=1, enemy=False):
     stat.append(0)
     
     if enemy:
-        stat += [randint(25, 100 + 50 * (level - 1)), 5, randint(2, 10 * level), 0, color]
+        stat += [randint(25, 100 + 50 * (level - 1)), 5, randint(5 * level, 10 * level), 0, color]
     else:
         stat += [100, 5, 15, 0, color]
     return stat
