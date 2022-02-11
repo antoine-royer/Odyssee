@@ -126,7 +126,7 @@ def nyctalopie(user, players, target=None):
 
 
 def vol(user, players, target=None):
-    if user.capacity_roll(2):
+    if user.capacity_roll(2) >= 2:
         amount = target.stat[8]
         user.stat[8] += amount
         target.stat[8] = 0

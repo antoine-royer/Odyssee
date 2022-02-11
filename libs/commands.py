@@ -433,22 +433,22 @@ class OdysseeCommands(commands.Cog):
                 if check == -1:
                     await ctx.send(f"__{player.name}__ a gagné la compétence : '{capacite}'.")
                 else:
-                    await ctx.send(f"__{player.name}__ a réussi son lancer de compétence (+1) : '{capacite}'.")
+                    await ctx.send(f"__{player.name}__ a fait un succès critique sur son lancer de compétence : '{capacite}'")
 
             elif check == -1:
                 await ctx.send(f"__{player.name}__ n'a pas réussi à apprendre la compétence : '{capacite}'.")
 
             elif die_score >= 10 :
-                await ctx.send(f"__{player.name}__ a réussi son lancer de compétence : '{capacite}'.")
+                await ctx.send(f"__{player.name}__ a fait un succès sur son lancer de compétence : '{capacite}'.")
 
             elif die_score > 5:
-                await ctx.send(f"__{player.name}__ a raté son lancer de compétence : '{capacite}'.")
+                await ctx.send(f"__{player.name}__ a fait un échec sur son lancer de compétence : '{capacite}'.")
 
             else:
                 if player.sub_abilities(capacite) == 1:
                     await ctx.send(f"__{player.name}__ a perdu la compétence : '{capacite}'.")
                 else:
-                    await ctx.send(f"__{player.name}__ a raté son lancer de compétence (-1) : '{capacite}'.")
+                    await ctx.send(f"__{player.name}__ a fait un échec critique sur son lancer de compétence : '{capacite}'.")
 
             self.save_game()
 
