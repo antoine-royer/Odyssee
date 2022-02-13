@@ -36,8 +36,9 @@ class AdminCommands(commands.Cog):
 
 
     def get_player_from_name(self, player_name):
+        player_name = player_name.lower()
         for player_id in self.data_player:
-            if self.data_player[player_id].name == player_name:
+            if self.data_player[player_id].name.lower() == player_name:
                 return player_id
         return None
 

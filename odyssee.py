@@ -25,6 +25,7 @@ save = load_save()
 for cmnd_module in (OdysseeCommands, AdminCommands):
     odyssee.add_cog(cmnd_module(config, save))
 
+
 @odyssee.event
 async def on_ready():
     activity = discord.Activity(type=discord.ActivityType.watching, name=config["PREFIX"] + "aide")

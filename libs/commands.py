@@ -27,6 +27,10 @@ def make_embed(fields, title, description, color=8421504, inline=False):
 async def server_id(ctx):
     global guild_id
 
+    if ctx.author.nick: author = ctx.author.nick
+    else: author = ctx.author.name
+    print(f"{author} : {ctx.message.content}")
+
     if not guild_id:
         guild_id = ctx.guild.id
     if guild_id != ctx.guild.id:
@@ -70,8 +74,9 @@ class OdysseeCommands(commands.Cog):
 
 
     def get_player_from_name(self, player_name):
+        player_name = player_name.lower()
         for player_id in self.data_player:
-            if self.data_player[player_id].name == player_name:
+            if self.data_player[player_id].name.lower() == player_name:
                 return self.data_player[player_id]
         return None
 
@@ -213,7 +218,7 @@ class OdysseeCommands(commands.Cog):
 
         # Misceleanous
         misc = ""
-        for index, misc_name in enumerate(("Vie ...# PV", "Mana ..#", "Argent # Drachmes", f"Poids .# / {joueur.max_weight}")):
+        for index, misc_name in enumerate((f"Vie ...# / {(100 + (info[2] - 1) * 25)} PV", "Mana ..#", "Argent # Drachmes", f"Poids .# / {joueur.max_weight}")):
             before, after = misc_name.split("#")
             misc += f"`{before}.: {info[index + 9]}{after}`\n"
 
@@ -859,7 +864,8 @@ class OdysseeCommands(commands.Cog):
         max_mana = lvl * 5
         
         # Régénération de la vie
-        if player.stat[6] < 100 + (lvl - 1) * 50:
+        if player.stat[6] < 100 + (lvl - 1) * 25:
+            if player.state == 0: player.state = 3
             player.stat[6] += 5 * lvl
 
         # régénération de la mana
@@ -875,7 +881,7 @@ class OdysseeCommands(commands.Cog):
             player.state = 0
         
         # Blessé
-        if player.state == 3 and player.stat[6] >= 100:
+        if player.state == 3 and player.stat[6] >= (100 + (lvl - 1) * 25):
             player.state = 0
         
 

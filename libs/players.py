@@ -95,11 +95,11 @@ class Player:
     # Du courage à la mana (incluse)
     def stat_add(self, stat_to_add):
         for i in range(8): self.capacity_modify(i, stat_to_add[i])
-        self.max_weight = 10 * self.stat[1]
+        self.max_weight = 5 * (self.stat[1] + 1)
 
     def stat_sub(self, stat_to_sub):
         for i in range(8): self.capacity_modify(i, -stat_to_sub[i])
-        self.max_weight = 10 * self.stat[1]
+        self.max_weight = 5 * (self.stat[1] + 1)
 
     def have(self, object_name): # Renvoie : (index, Object), Object.type = -1 si l'objet est inconnu ; index = -1 si l'objet n'est pas possédé
         object_name = get_official_name(object_name, True)
