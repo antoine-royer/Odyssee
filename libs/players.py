@@ -68,6 +68,14 @@ class Player:
     def isalive(self):
         return self.stat[6] > 0
 
+    def isoverweight(self):
+        max_weight = self.get_max_weight()
+        if self.stat[9] > max_weight: return self.stat[9] - max_weight
+        else: return 0
+
+    def get_max_weight(self):
+        return 10 * (self.stat[1] // 5)
+
     def get_level(self):
         return (sum(self.stat[:5]) // 100) + 1
 
@@ -75,11 +83,11 @@ class Player:
         return get_state_by_id(self.state)
 
     def capacity_roll(self, capacity_index):
-        if self.state == 3:
-            malus = self.get_level() * 3
-            point = (roll_die() + self.stat[capacity_index] - malus) / (40 * self.get_level())
-        else:
-            point = (roll_die() + self.stat[capacity_index]) / (40 * self.get_level())
+        overweight = self.isoverweight()
+        if self.state == 3 or overweight: malus = 5 * self.get_level() + (overweight // 2)
+        else: malus = 0
+        
+        point = (roll_die() + self.stat[capacity_index] - malus) / (40 * self.get_level())
 
         if point >= 0.75:
             return 3 # succès critique
@@ -95,11 +103,9 @@ class Player:
     # Du courage à la mana (incluse)
     def stat_add(self, stat_to_add):
         for i in range(8): self.capacity_modify(i, stat_to_add[i])
-        self.max_weight = 5 * (self.stat[1] + 1)
 
     def stat_sub(self, stat_to_sub):
         for i in range(8): self.capacity_modify(i, -stat_to_sub[i])
-        self.max_weight = 5 * (self.stat[1] + 1)
 
     def have(self, object_name): # Renvoie : (index, Object), Object.type = -1 si l'objet est inconnu ; index = -1 si l'objet n'est pas possédé
         object_name = get_official_name(object_name, True)

@@ -22,9 +22,6 @@ class AdminCommands(commands.Cog):
 
 
     def save_game(self):
-        for player_id in self.data_player:
-            player = self.data_player[player_id]
-            player.max_weight = 5 * (player.stat[1] + 1)
         export_save(self.data_player, self.data_kick, self.guild_id)
 
 
@@ -182,6 +179,7 @@ class AdminCommands(commands.Cog):
                 await ctx.send(f"__{player.name}__ oublie le pouvoir : '{nom}'.")
 
         elif capacite == "état":
+            valeur = valeur.lower()
             state = get_state_by_name(valeur)
             if state + 1:
                 player.state = state
@@ -385,7 +383,7 @@ class AdminCommands(commands.Cog):
                     damage = phase_3(fighters, attacker, defender)
                     
                     if damage:
-                        fighters[defender].state = get_state_by_name("blessé")
+                        if fighters[defender].stat[6] < 100 + (fighters[defender].get_level() - 1) * 25: fighters[defender].state = 3
                         message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
                     
                     else:
@@ -423,43 +421,40 @@ class AdminCommands(commands.Cog):
     @commands.command(help="Fait dormir les PnJ", brief="Fait dormir les PnJ")
     @commands.check(is_admin)
     async def pnj_dormir(self, ctx):
-        pnj_names = []
-        for pnj_id in self.data_player:
-            if pnj_id > 0: continue
-            pnj = self.get_player_from_id(pnj_id)
-            pnj_names.append(pnj.name)
+        npc_names = []
+        for npc_id in self.data_player:
+            if npc_id > 0: continue
+            npc = self.get_player_from_id(npc_id)
+            npc_names.append(npc.name)
 
-            lvl = pnj.get_level()
+            lvl = npc.get_level()
             max_mana = lvl * 5
             
             # Régénération de la vie
-            if pnj.stat[6] < 100 + (lvl - 1) * 50:
-                pnj.stat[6] += 5 * lvl
+            if npc.stat[6] < 100 + (lvl - 1) * 25:
+                if npc.state == 0: npc.state = 3
+                npc.stat[6] += 5 * lvl
 
             # régénération de la mana
-            if pnj.state != 3 and pnj.stat[7] < 5 + (lvl - 1):
-                pnj.stat[7] += 1 + (lvl // 2)
+            if npc.state != 3 and npc.stat[7] < 5 + (lvl - 1):
+                npc.stat[7] += 1 + (lvl // 2)
 
             # Empoisonné
-            if pnj.state == 1:
-                pnj.stat[6] -= random(0, 5 * lvl)
+            if npc.state == 1:
+                npc.stat[6] -= random(0, 5 * lvl)
 
-            # Inconscient
-            if pnj.state == 2:
-                pnj.state = 0
+            # Inconscient, endormi
+            if npc.state in (2, 4):
+                npc.state = 0
             
             # Blessé
-            if pnj.state == 3 and pnj.stat[6] >= 100:
-                pnj.state = 0
+            if npc.state == 3 and npc.stat[6] >= 100 + (lvl - 1) * 25:
+                npc.state = 0
             
-            # Endormi
-            if pnj.state == 4:
-                pnj.state = 0
-            
-        if len(pnj_names) == 1:
-            await ctx.send(f"__{pnj_names[0]}__ a dormi.")
-        elif len(pnj_names) > 1:
-            await ctx.send(f"__{', '.join(pnj_names)}__ ont dormi.")
+        if len(npc_names) == 1:
+            await ctx.send(f"__{npc_names[0]}__ a dormi.")
+        elif len(npc_names) > 1:
+            await ctx.send(f"__{', '.join(npc_names)}__ ont dormi.")
         
         self.save_game()
 

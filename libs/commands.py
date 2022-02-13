@@ -59,10 +59,8 @@ class OdysseeCommands(commands.Cog):
 
         glb_players = self.data_player
 
+
     def save_game(self):
-        for player_id in self.data_player:
-            player = self.data_player[player_id]
-            player.max_weight = 5 * (player.stat[1] + 1)
         export_save(self.data_player, self.data_kick, guild_id)
 
 
@@ -218,7 +216,7 @@ class OdysseeCommands(commands.Cog):
 
         # Misceleanous
         misc = ""
-        for index, misc_name in enumerate((f"Vie ...# / {(100 + (info[2] - 1) * 25)} PV", "Mana ..#", "Argent # Drachmes", f"Poids .# / {joueur.max_weight}")):
+        for index, misc_name in enumerate((f"Vie ...# / {(100 + (info[2] - 1) * 25)} PV", "Mana ..#", "Argent # Drachmes", f"Poids .# / {joueur.get_max_weight()}")):
             before, after = misc_name.split("#")
             misc += f"`{before}.: {info[index + 9]}{after}`\n"
 
@@ -816,7 +814,7 @@ class OdysseeCommands(commands.Cog):
 
                     damage = phase_3(fighters, attacker, defender)
                     if damage:
-                        if fighters[defender].stat[6] < 100 + (fighters[defender].get_level() - 1) * 25: fighters[defender].state = get_state_by_name("blessé")
+                        if fighters[defender].stat[6] < 100 + (fighters[defender].get_level() - 1) * 25: fighters[defender].state = 3
                         message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
                     else:
                         message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
@@ -896,7 +894,7 @@ class OdysseeCommands(commands.Cog):
 
         nouvel_etat = nouvel_etat.lower()
         state = get_state_by_name(nouvel_etat)
-        if state:
+        if state + 1:
             player.state = state
             await ctx.send(f"__{player.name}__ devient {nouvel_etat}.")
         else:
