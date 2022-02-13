@@ -886,22 +886,6 @@ class OdysseeCommands(commands.Cog):
         await ctx.send(f"__{player.name}__ se repose.")
 
 
-    @commands.command(name="état", help=f"Vous permet de changer votre état parmi : {', '.join(get_states_list())}", brief="Changer d'état")
-    @commands.check(server_id)
-    async def etat(self, ctx, nouvel_etat: str):
-        player = self.get_player_from_id(ctx.author.id)
-        if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
-
-        nouvel_etat = nouvel_etat.lower()
-        state = get_state_by_name(nouvel_etat)
-        if state + 1:
-            player.state = state
-            await ctx.send(f"__{player.name}__ devient {nouvel_etat}.")
-        else:
-            send_error(ctx, f"{nouvel_etat} n'est pas un état connu")
-        
-        self.save_game()
-
     @commands.command(name="plante", help="Donne des informations sur la plante demandée (source : wikiphyto.org)", brief="Informations sur une plante")
     async def plante(self, ctx, nom: str):
         try: result, check_code = wikiphyto_api(nom)
