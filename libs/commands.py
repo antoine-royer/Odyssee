@@ -816,7 +816,7 @@ class OdysseeCommands(commands.Cog):
 
                     damage = phase_3(fighters, attacker, defender)
                     if damage:
-                        fighters[defender].state = get_state_by_name("blessé")
+                        if fighters[defender].stat[6] < 100 + (fighters[defender].get_level() - 1) * 25: fighters[defender].state = get_state_by_name("blessé")
                         message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
                     else:
                         message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
@@ -881,7 +881,7 @@ class OdysseeCommands(commands.Cog):
             player.state = 0
         
         # Blessé
-        if player.state == 3 and player.stat[6] >= (100 + (lvl - 1) * 25):
+        if player.state == 3 and player.stat[6] >= 100 + (lvl - 1) * 25:
             player.state = 0
         
 
