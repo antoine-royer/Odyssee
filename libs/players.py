@@ -193,8 +193,8 @@ class Player:
         if not power:
             return 0
 
-        # Pouvoir déjà possédé
-        elif power.power_id in [i.power_id for i in self.power] or len(self.power) >= 3 + (self.stat[4] // 100):
+        # Pouvoir déjà possédé ou trop de pouvoirs
+        elif power.power_id in [i.power_id for i in self.power] or len(self.power) >= 3 + (self.stat[4] // 20):
             return 1
         
         # Succès

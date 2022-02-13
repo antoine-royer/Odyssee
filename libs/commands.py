@@ -10,6 +10,20 @@ guild_id = None
 glb_players = {}
 
 
+def make_embed(fields, title, description, color=8421504, inline=False):
+    embeds = []
+    nb = len(fields) // 25 + 1
+    index = 1
+    while fields:
+        embed = discord.Embed(title=f"{title} ({index}/{nb})", description=description, color=color)
+        for field in fields[: 25]:
+            embed.add_field(name=field[0], value=field[1], inline=inline)
+        fields = fields[25: ]
+        index += 1
+        embeds.append(embed)
+    return embeds
+
+
 async def server_id(ctx):
     global guild_id
 
@@ -92,16 +106,8 @@ class OdysseeCommands(commands.Cog):
             for cmnd in self.get_commands():
                 fields.append((cmnd.brief, get_syntax(cmnd)))
             
-            nb = len(fields) // 25 + 1
-            index = 1
-            while fields:
-                embed = discord.Embed(title=f"Rubrique d'aide ({index}/{nb})", description=f"Entrez : `{self.PREFIX}aide <commande>` pour plus d'informations.", color=8421504)
-                for field in fields[: 25]:
-                    embed.add_field(name=field[0], value=field[1], inline=False)
-                fields = fields[25: ]
-                index += 1
+            for embed in make_embed(fields, "Rubique d'aide", f"Entrez : `{self.PREFIX}aide <commande>` pour plus d'informations."):
                 await ctx.send(embed=embed)
-
 
 
     @commands.command(help="Votre espèce est à préciser impérativement. Si aucun pseudonyme n'est précisé, Odyssée prendra votre nom d'utilisateur.", brief="Créer un nouveau joueur")
@@ -281,13 +287,15 @@ class OdysseeCommands(commands.Cog):
     async def liste(self, ctx):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
+        color = player.stat[10]
 
-        embed = discord.Embed(title="Joueurs", description="Liste des joueurs enregistrés", color=player.stat[10])
+        fields = []
         for player_id in self.data_player:
             player = self.data_player[player_id]
-            embed.add_field(name=f"{player.name}{('', ' (PnJ)')[player.id <= 0]}", value=f"{player.species} de niveau {player.get_level()} vers {player.place}\n[{player.get_state()}]", inline=False)
-        
-        await ctx.send(embed=embed)
+            fields.append((f"{player.name}{('', ' (PnJ)')[player.id <= 0]}", f"{player.species} de niveau {player.get_level()} vers {player.place}\n[{player.get_state()}]"))
+
+        for embed in make_embed(fields, "Joueurs", "Liste des joueurs enregistrés", color):
+            await ctx.send(embed=embed)
 
 
     @commands.command(help="Le premier paramètre est le nom de l'objet, le second est optionnel et correspond au nombre d'objets pris.", brief="Prendre un objet")
@@ -493,14 +501,14 @@ class OdysseeCommands(commands.Cog):
             player.stat[7] -= 1
             await ctx.send(f"__{player.name}__ utilise {nom} :\n" + power_use(power.power_id)(player, self.data_player, adversaire))
 
-        else:
-            embed = discord.Embed(title=f"Pouvoirs de {player.name}", description="Pouvoirs spéciaux connus et descriptions", color=player.stat[10])
-            
+        else:   
+            fields = []
             for power in player.power:
-                description = power.description + ("", "(cible requise)")[power.enemy]
-                embed.add_field(name=power.name.capitalize(), value=power.description, inline=False)
+                description = power.description + ("", " (cible requise)")[power.enemy]
+                fields.append((power.name.capitalize(), description))
             
-            await ctx.send(embed=embed)
+            for embed in make_embed(fields, f"Pouvoirs de {player.name}", "Pouvoirs spéciaux connus et descriptions", player.stat[10]):
+                await ctx.send(embed=embed)
 
 
     @commands.command(help="Vous permer d'apprendre de nouveau sort. le nom du sort est obligatoire.", brief="Apprend un nouveau pouvoir spécial")
@@ -550,11 +558,16 @@ class OdysseeCommands(commands.Cog):
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
         shop_id = player.in_shop()
-        if shop_id == -1: await send_error(ctx, f"__{player.name}__ n'est pas dans un magasin"); return
+        if not nom and shop_id == -1: await send_error(ctx, f"__{player.name}__ n'est pas dans un magasin"); return
 
         if nom:
-            obj = get_object(get_official_name(nom, shop_id))
-            if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return
+
+            if shop_id == -1:
+                check, obj = player.have(nom)
+                if check == -1: await send_error(ctx, f"__{player.name}__ ne possède par l'objet : '{nom}'"); return
+            else:
+                obj = get_object(get_official_name(nom, shop_id))
+                if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return 
 
             embed = discord.Embed(title=nom, value="Description détaillée", color=player.stat[10])
 
@@ -577,13 +590,15 @@ class OdysseeCommands(commands.Cog):
 
         else:
             all_objects = get_object_by_shop(shop_id)
-            embed = discord.Embed(title=player.place, description="Liste des articles disponible", color=player.stat[10])
+            capacities = ("Courage", "Force", "Habileté", "Rapidité", "Intelligence", "Défense", "Vie", "Mana", "Valeur", "Poids")
+                        
+            fields = []
             for obj in all_objects:
-                capacity = ("Courage", "Force", "Habileté", "Rapidité", "Intelligence", "Défense", "Vie", "Mana", "Valeur", "Poids")
-                capacity = "; ".join([f"{name} : {obj.stat[index]}" for index, name in enumerate(capacity) if obj.stat[index]])
-                embed.add_field(name=obj.name.capitalize(), value=capacity, inline=False)
+                capacity = "; ".join([f"{name} : {obj.stat[index]}" for index, name in enumerate(capacities) if obj.stat[index]])
+                fields.append((obj.name.capitalize(), capacity))
 
-            await ctx.send(embed=embed)
+            for embed in make_embed(fields, player.place, "Liste des articles disponible", player.stat[10]):
+                await ctx.send(embed=embed)
 
 
     @commands.command(help="Vous permer d'acheter des objets. Le premier paramètre est le nom de l'objet, le second, faculatatif, est le nombre d'objet à acheter.", brief="Acheter un objet")

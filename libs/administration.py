@@ -67,10 +67,19 @@ class AdminCommands(commands.Cog):
                 embed.add_field(name="Erreur : commande inconnue", value=f"Entrez `{self.PREFIX}aide` pour avoir la liste des commandes.")
         
         else:
-            embed = discord.Embed(title="Rubrique des commandes administrateur", description=f"Entrez : `{self.PREFIX}aide_admin <commande>` pour plus d'informations.", color=8421504)
+            fields = []
             for cmnd in self.get_commands():
-                embed.add_field(name=cmnd.brief, value=get_syntax(cmnd), inline=False)
-        await ctx.send(embed=embed)
+                fields.append((cmnd.brief, get_syntax(cmnd)))
+            
+            nb = len(fields) // 25 + 1
+            index = 1
+            while fields:
+                embed = discord.Embed(title=f"Rubrique des commandes administrateur ({index}/{nb})", description=f"Entrez : `{self.PREFIX}aide_admin <commande>` pour plus d'informations.", color=8421504)
+                for field in fields[: 25]:
+                    embed.add_field(name=field[0], value=field[1], inline=False)
+                fields = fields[25: ]
+                index += 1
+                await ctx.send(embed=embed)
 
 
     @commands.command(name="joueur+", help="Permet d'ajouter un personnage non jouable au jeu en cours. Préciser l'espèce du joueur et son nom.", brief="Ajouter un PnJ")
@@ -212,13 +221,22 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{objet}'")
         else:
             capacities = get_capacities()
-
             capacite = capacite.lower()
+
             if capacite in capacities:
                 cap_index = capacities.index(capacite)
                 player.inventory[index].stat[cap_index] += valeur
                 if obj.object_type == 0: player.stat[cap_index] += valeur
                 await ctx.send(f"L'objet '{objet}' de __{player.name}__ {('perd', 'gagne')[valeur > 0]} {valeur} point{('', 's')[valeur > 1]} en {capacite.capitalize()}.")
+            
+            elif capacite == "type":
+                new_type = get_type_by_id(valeur)
+                if new_type:
+                    player.inventory[index].object_type = valeur
+                    await ctx.send(f"Le type de l'objet '{objet}' de __{player.name}__ est devenu : '{new_type}'")
+                else:
+                    await send_error(ctx, f"{valeur} n'est pas l'indice d'un type connu")
+
             else:
                 await send_error(ctx, f"'{capacite}' n'est pas une capacité connue")
 
@@ -401,9 +419,9 @@ class AdminCommands(commands.Cog):
         self.save_game()
 
 
-    @commands.command(help="Fait passer la nuit pour tous les PnJ", brief="Fait dormir les PnJ")
+    @commands.command(help="Fait dormir les PnJ", brief="Fait dormir les PnJ")
     @commands.check(is_admin)
-    async def nuit(self, ctx):
+    async def pnj_dormir(self, ctx):
         pnj_names = []
         for pnj_id in self.data_player:
             if pnj_id > 0: continue
