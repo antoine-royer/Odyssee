@@ -310,12 +310,12 @@ class OdysseeCommands(commands.Cog):
         if nombre <= 0: nombre = 1
         check = player.object_add(nom, nombre)
         
-        if check:
+        if not check in (0, 3):
             if check == 1: nombre = f" ({nombre})"
             else: nombre = ""
             await ctx.send(f"__{player.name}__ prend {nom}{nombre}")
         else:
-            await send_error(ctx, f"__{player.name}__ possède déjà l'objet : '{nom}'")
+            await send_error(ctx, f"__{player.name}__ ne peut pas prendre l'objet : '{nom}' (objet non préhensile ou déjà possédé)")
 
         self.save_game()
 
@@ -579,7 +579,7 @@ class OdysseeCommands(commands.Cog):
                 capacity += f"`{name}.: {obj.stat[index]}`\n"
 
             misc = ""
-            for index, name in enumerate(("Usage .", "Vie ...# PV", "Mana ..#", "Valeur # Drachmes", "Poids .#")):
+            for index, name in enumerate(("Type ..", "Vie ...# PV", "Mana ..#", "Valeur # Drachmes", "Poids .#")):
                 if not index:
                     misc += f"`{name}.: {get_type_by_id(obj.object_type)}`\n"
                 else:
@@ -594,7 +594,7 @@ class OdysseeCommands(commands.Cog):
         else:
             all_objects = get_object_by_shop(shop_id)
             capacities = ("Courage", "Force", "Habileté", "Rapidité", "Intelligence", "Défense", "Vie", "Mana", "Valeur", "Poids")
-                        
+
             fields = []
             for obj in all_objects:
                 capacity = "; ".join([f"{name} : {obj.stat[index]}" for index, name in enumerate(capacities) if obj.stat[index]])
@@ -868,7 +868,11 @@ class OdysseeCommands(commands.Cog):
 
         # régénération de la mana
         if player.state != 3 and player.stat[7] < 5 + (lvl - 1):
-            player.stat[7] += 1 + (lvl // 2)
+            mana = 1 + (lvl // 2)
+            for obj in player.inventory:
+                mana += obj.stat[7]
+            player.stat[7] += mana
+
 
         # Empoisonné
         if player.state == 1:

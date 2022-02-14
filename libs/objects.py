@@ -32,7 +32,7 @@ def get_shop_name():
 
 
 def get_all_types():
-    table = sqlite3.connect("BDD/odyssee_shop.db")
+    table = sqlite3.connect("BDD/odyssee_objects.db")
     c = table.cursor()
 
     database = c.execute("SELECT id, description FROM types").fetchall()
@@ -43,7 +43,7 @@ def get_all_types():
 
 # object_stat : renvoie les stats d'un objets sous la forme : (nom, stat, isknown) où isknow = -1 si l'objet n'est pas connu; type de l'objet sinon
 def get_object(object_name, shop_id=None):
-    table = sqlite3.connect("BDD/odyssee_shop.db")
+    table = sqlite3.connect("BDD/odyssee_objects.db")
     c = table.cursor()
 
     if shop_id:
@@ -66,7 +66,7 @@ def get_object(object_name, shop_id=None):
 
 
 def get_official_name(object_name, return_entry=False):
-    table = sqlite3.connect("BDD/odyssee_shop.db")
+    table = sqlite3.connect("BDD/odyssee_objects.db")
     c = table.cursor()
 
     database = c.execute("SELECT nom FROM objets").fetchall()
@@ -84,7 +84,7 @@ def get_official_name(object_name, return_entry=False):
 
 
 def get_object_by_shop(shop_id):
-    table = sqlite3.connect("BDD/odyssee_shop.db")
+    table = sqlite3.connect("BDD/odyssee_objects.db")
     c = table.cursor()
 
     database = c.execute(f"""
@@ -97,7 +97,7 @@ def get_object_by_shop(shop_id):
 
 
 def get_type_by_id(type_id):
-    table = sqlite3.connect("BDD/odyssee_shop.db")
+    table = sqlite3.connect("BDD/odyssee_objects.db")
     c = table.cursor()
 
     database = c.execute(f"""

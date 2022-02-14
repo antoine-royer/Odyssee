@@ -1,7 +1,7 @@
 # Statistiques : Courage (0), Force (1), Habileté (2), Rapidité (3), Intelligence (4), Défense (5), Vie (6), Mana (7), Argent (8), Poids porté (9), Couleur (10)
 
 from random import randint
-from libs.shop import *
+from libs.objects import *
 from libs.powers import *
 from libs.states import *
 
@@ -137,10 +137,12 @@ class Player:
             self.stat[9] += obj.stat[9]
             obj.name = object_name
             obj.quantity = 1
-            if obj.object_type != 2: self.inventory.append(obj)
-            if obj.object_type in (0, 2): self.stat_add(obj.stat)
-            return 2
-
+            if obj.object_type in (0, 2, 7, 8): self.stat_add(obj.stat)
+            if obj.object_type != 2:
+                self.inventory.append(obj)
+                return 2
+            else:
+                return 3
         else:
             return 0
 
@@ -156,7 +158,7 @@ class Player:
             self.stat[9] -= nb * obj.stat[9]
             self.inventory[index].quantity -= nb
             if self.inventory[index].quantity <= 0: self.inventory.pop(index)
-            if obj.object_type == 0: self.stat_sub(obj.stat)
+            if obj.object_type in (0, 7, 8): self.stat_sub(obj.stat)
             return 1
 
     def object_use(self, object_name, nb):
