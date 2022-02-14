@@ -6,6 +6,20 @@ from libs.lib_odyssee import *
 guild_id, data_admin = None, []
 
 
+def make_embed(fields, title, description, color=8421504, inline=False):
+    embeds = []
+    nb = len(fields) // 25 + 1
+    index = 1
+    while fields:
+        embed = discord.Embed(title=f"{title} ({index}/{nb})", description=description, color=color)
+        for field in fields[: 25]:
+            embed.add_field(name=field[0], value=field[1], inline=inline)
+        fields = fields[25: ]
+        index += 1
+        embeds.append(embed)
+    return embeds
+
+
 async def is_admin(ctx):
     if ctx.author.id not in data_admin:
         await send_error(ctx, "commande non-autorisée")
@@ -63,20 +77,15 @@ class AdminCommands(commands.Cog):
                 embed.add_field(name="Description", value=cmnd.help, inline=True)
             else:
                 embed.add_field(name="Erreur : commande inconnue", value=f"Entrez `{self.PREFIX}aide` pour avoir la liste des commandes.")
+
+            await ctx.send(embed=embed)
         
         else:
             fields = []
             for cmnd in self.get_commands():
                 fields.append((cmnd.brief, get_syntax(cmnd)))
             
-            nb = len(fields) // 25 + 1
-            index = 1
-            while fields:
-                embed = discord.Embed(title=f"Rubrique des commandes administrateur ({index}/{nb})", description=f"Entrez : `{self.PREFIX}aide_admin <commande>` pour plus d'informations.", color=8421504)
-                for field in fields[: 25]:
-                    embed.add_field(name=field[0], value=field[1], inline=False)
-                fields = fields[25: ]
-                index += 1
+            for embed in make_embed(fields, f"Rubrique des commandes administrateur", f"Entrez : `{self.PREFIX}aide_admin <commande>` pour plus d'informations."):
                 await ctx.send(embed=embed)
 
 
@@ -112,7 +121,7 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"le joueur : '{nom}' n'existe pas")
 
 
-    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, les états.", brief="Modifier un joueur")
+    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, les états, les pouvoirs et les compétences.", brief="Modifier un joueur")
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
         player_id = self.get_player_from_name(nom)
@@ -168,15 +177,15 @@ class AdminCommands(commands.Cog):
                 await ctx.send(f"__{player.name}__ apprend le pouvoir : '{valeur}'.")
 
         elif capacite == "pouvoir-":
-            check = player.power_sub(nom.lower())
-            nom = nom.capitalize()
+            check = player.power_sub(valeur.lower())
+            valeur = valeur.capitalize()
 
             if check == 0:
-                await send_error(ctx, f"le pouvoir '{nom} n'existe pas")
+                await send_error(ctx, f"le pouvoir '{valeur} n'existe pas")
             elif check == 1:
-                await send_error(ctx, f"__{player.name}__ n'a pas le pouvoir : '{nom}'")
+                await send_error(ctx, f"__{player.name}__ n'a pas le pouvoir : '{valeur}'")
             else:
-                await ctx.send(f"__{player.name}__ oublie le pouvoir : '{nom}'.")
+                await ctx.send(f"__{player.name}__ oublie le pouvoir : '{valeur}'.")
 
         elif capacite == "état":
             valeur = valeur.lower()
@@ -189,20 +198,20 @@ class AdminCommands(commands.Cog):
 
         elif capacite == "compétence+":
             check = player.have_abilities(valeur)
-            if player.add_abilities(valeur, check) == 1:
+            if player.add_abilities(valeur, check, nombre) == 1:
                 await ctx.send(f"__{player.name}__ gagne la compétence : '{valeur}'.")
             else:
-                await ctx.send(f"__{player.name}__ gagne un point sur la compétence : '{valeur}'.")
+                await ctx.send(f"__{player.name}__ gagne {nombre} point{('', 's')[nombre > 1]} sur la compétence : '{valeur}'.")
 
         elif capacite == "compétence-":
             check = player.have_abilities(valeur)
             if check == -1:
                 await send_error(ctx, f"__{player.name}__ ne possède pas la compétence : '{valeur}'")
             else:
-                if player.sub_abilities(valeur, check) == 1:
+                if player.sub_abilities(valeur, check, nombre) == 1:
                     await ctx.send(f"__{player.name}__ a perdu la compétence : '{valeur}'.")
                 else:
-                    await ctx.send(f"__{player.name}__ a perdu un point sur la compétence : '{valeur}'.")
+                    await ctx.send(f"__{player.name}__ a perdu {nombre} point{('', 's')[nombre > 1]} sur la compétence : '{valeur}'.")
 
         
         self.save_game()
@@ -461,7 +470,7 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Permet de faire en sorte qu'un PnJ utilise un de ses pouvoirs", brief="Utiliser un pouvoir d'un PnJ")
     @commands.check(is_admin)
-    async def pnj_pouvoir(self, ctx, joueur: str, nom: str, adversaire: str=None):
+    async def pnj_pouvoir(self, ctx, joueur: str, nom: str=None, adversaire: str=None):
         pnj = self.get_player_from_name(joueur)
         if not pnj: await send_error(ctx, f"{joueur} n'est pas un joueur enregistré"); return
         pnj = self.data_player[pnj]
@@ -496,5 +505,14 @@ class AdminCommands(commands.Cog):
 
             pnj.stat[7] -= 1
             await ctx.send(f"__{pnj.name}__ utilise {nom} :\n" + power_use(power.power_id)(pnj, self.data_player, adversaire))
+
+        else:   
+            fields = []
+            for power in pnj.power:
+                description = power.description + ("", " (cible requise)")[power.enemy]
+                fields.append((power.name.capitalize(), description))
+            
+            for embed in make_embed(fields, f"Pouvoirs de {pnj.name}", "Pouvoirs spéciaux connus et descriptions", pnj.stat[10]):
+                await ctx.send(embed=embed)
 
         self.save_game()

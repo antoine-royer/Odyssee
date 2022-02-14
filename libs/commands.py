@@ -216,7 +216,7 @@ class OdysseeCommands(commands.Cog):
 
         # Misceleanous
         misc = ""
-        for index, misc_name in enumerate((f"Vie ...# / {(100 + (info[2] - 1) * 25)} PV", "Mana ..#", "Argent # Drachmes", f"Poids .# / {joueur.get_max_weight()}")):
+        for index, misc_name in enumerate((f"Vie ...#/{joueur.get_max_health()} PV", "Mana ..#", "Argent # Drachmes", f"Poids .#/{joueur.get_max_weight()}")):
             before, after = misc_name.split("#")
             misc += f"`{before}.: {info[index + 9]}{after}`\n"
 
@@ -564,15 +564,15 @@ class OdysseeCommands(commands.Cog):
         if not nom and shop_id == -1: await send_error(ctx, f"__{player.name}__ n'est pas dans un magasin"); return
 
         if nom:
-
-            if shop_id == -1:
-                check, obj = player.have(nom)
-                if check == -1: await send_error(ctx, f"__{player.name}__ ne possède par l'objet : '{nom}'"); return
-            else:
+            check, obj = player.have(nom)
+            if check == -1:
                 obj = get_object(get_official_name(nom, shop_id))
+                if shop_id == -1: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{nom}'"); return
                 if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return 
 
-            embed = discord.Embed(title=nom, value="Description détaillée", color=player.stat[10])
+            if obj.shop_id == -1: shop = "Cet objet n'est rattaché à aucun magasin"
+            else: shop = f"Magasin de rattachement : {get_shop_name()[obj.shop_id][0]}"
+            embed = discord.Embed(title=nom, description=f"{shop}", color=player.stat[10])
 
             capacity = ""
             for index, name in enumerate(("Courage ..", "Force ....", "Habileté .", "Rapidité .", "Intellect ", "Défense ..")):
@@ -616,9 +616,9 @@ class OdysseeCommands(commands.Cog):
 
         obj = get_official_name(nom.lower())
         obj = get_object(obj, shop_id)
-        if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return
+        if obj.shop_id == -1: await send_error(ctx, f"l'objet : '{nom}' n'est pas vendu ici"); return
 
-        if obj.object_type not in (1, 5) or nombre < 1: nombre = 1
+        if obj.object_type not in (1, 5, 8) or nombre < 1: nombre = 1
 
         if player.stat[8] >= nombre * obj.stat[8]:
             check = player.object_add(nom, nombre)
@@ -647,9 +647,9 @@ class OdysseeCommands(commands.Cog):
         if shop_id == -1: await send_error(ctx, f"__{player.name}__ n'est pas dans un magasin"); return
 
         obj = get_object(get_official_name(nom.lower()), shop_id)
-        if obj.shop_id == -1: await send_error(ctx, f"l'objet : '{nom}' n'est pas vendable ici"); return
+        if obj.shop_id == -1: await send_error(ctx, f"l'objet : '{nom}' n'intéresse personne ici"); return
 
-        if obj.object_type not in (1, 5) or nombre < 1: nombre = 1
+        if obj.object_type not in (1, 5, 8) or nombre < 1: nombre = 1
 
         check = player.object_del(nom, nombre)
 
@@ -862,7 +862,7 @@ class OdysseeCommands(commands.Cog):
         max_mana = lvl * 5
         
         # Régénération de la vie
-        if player.stat[6] < 100 + (lvl - 1) * 25:
+        if player.stat[6] < player.get_max_health():
             if player.state == 0: player.state = 3
             player.stat[6] += 5 * lvl
 
@@ -879,7 +879,7 @@ class OdysseeCommands(commands.Cog):
             player.state = 0
         
         # Blessé
-        if player.state == 3 and player.stat[6] >= 100 + (lvl - 1) * 25:
+        if player.state == 3 and player.stat[6] >= player.get_max_health():
             player.state = 0
         
 

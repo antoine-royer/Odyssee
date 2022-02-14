@@ -76,6 +76,9 @@ class Player:
     def get_max_weight(self):
         return 10 * (self.stat[1] // 5)
 
+    def get_max_health(self):
+        return (100 + (self.get_level() - 1) * 25)
+
     def get_level(self):
         return (sum(self.stat[:5]) // 100) + 1
 
@@ -84,7 +87,7 @@ class Player:
 
     def capacity_roll(self, capacity_index):
         overweight = self.isoverweight()
-        if self.state == 3 or overweight: malus = 5 * self.get_level() + (overweight // 2)
+        if self.state == 3 or overweight: malus = 5 * self.get_level() + (overweight // 10)
         else: malus = 0
         
         point = (roll_die() + self.stat[capacity_index] - malus) / (40 * self.get_level())
@@ -119,19 +122,20 @@ class Player:
         index, obj = self.have(object_name)
 
         # Objet stockable en plusieurs exemplaire
-        if obj.object_type in (1, 5):
+        if obj.object_type in (1, 5, 8):
             self.stat[9] += nb * obj.stat[9]
 
             if index + 1: # Objet déjà possédé
                 self.inventory[index].quantity += nb
             else: # Pas encore possédé
+                obj.name = object_name
                 obj.quantity = nb
                 self.inventory.append(obj)
             return 1
 
         elif index == -1: # Si stockable en un seul exemplaire et que l'objet n'est pas dans l'inventaire
-            obj.name = object_name
             self.stat[9] += obj.stat[9]
+            obj.name = object_name
             obj.quantity = 1
             if obj.object_type != 2: self.inventory.append(obj)
             if obj.object_type in (0, 2): self.stat_add(obj.stat)
@@ -162,7 +166,7 @@ class Player:
         if index == -1 or self.inventory[index].quantity < nb:
             return 0
 
-        if obj.object_type in (1, 5):
+        if obj.object_type in (1, 5, 8):
             self.stat[9] -= nb * obj.stat[9]
             for _ in range(nb):
                 self.stat_add(obj.stat)
@@ -241,26 +245,27 @@ class Player:
                 return index
         return -1
 
-    def add_abilities(self, ab_name, index):
+    def add_abilities(self, ab_name, index, pts=1):
         if index == -1:
-            self.abilities.append([ab_name, 1])
+            self.abilities.append([ab_name, pts])
             return 1
         else:
-            if self.abilities[index][1] < 20: self.abilities[index][1] += 1
+            if self.abilities[index][1] + pts < 20: self.abilities[index][1] += pts
             return 2
 
-    def sub_abilities(self, ab_name, index):
-        self.abilities[index][1] -= 1
+    def sub_abilities(self, ab_name, index, pts=1):
+        self.abilities[index][1] -= pts
 
-        if self.abilities[index][1] == 0:
+        if self.abilities[index][1] <= 0:
             self.abilities.pop(index)
             return 1 # le joueur perd la compétence
         else:
             return 2 # le joueur perd un point
 
     def have_abilities(self, ab_name):
+        an_name = ab_name.lower()
         for index, ab in enumerate(self.abilities):
-            if ab_name == ab[0]: return index
+            if ab_name == ab[0].lower(): return index
 
         return -1
 

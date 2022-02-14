@@ -145,12 +145,17 @@ def guerison(user, players, target=None):
     msg = ""
     pts = user.get_level() * 10
 
+    index = 0
     for player_id in players:
         player = players[player_id]
-        if player.place == user.place and player.stat[6] < 100:
+        max_health = player.get_max_health()
+        if player.place == user.place and player.stat[6] < max_health:
             player.stat[6] += pts
-            msg += f" - __{player.name}__ a retrouvé {pts} points de Vie.\n"
+            if player.state == 3 and player.stat[6] >= max_health: player.state = 0
 
+            msg += f" - __{player.name}__ a retrouvé {pts} points de Vie.\n"
+            index += 1
+    if index == 0: msg += "Tous les joueurs présents sont en pleine santés."
     return msg
 
 
