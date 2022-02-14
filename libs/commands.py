@@ -308,7 +308,7 @@ class OdysseeCommands(commands.Cog):
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
         if nombre <= 0: nombre = 1
-        check = player.object_add(nom, nombre)
+        check = player.object_add(*player.have(nom), nombre, nom)
         
         if not check in (0, 3):
             if check == 1: nombre = f" ({nombre})"
@@ -328,7 +328,7 @@ class OdysseeCommands(commands.Cog):
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
         if nombre <= 0: nombre = 1
-        check = player.object_del(nom, nombre)
+        check = player.object_del(*player.have(nom), nombre)
 
         if check == 1:
             if nombre > 1: nombre = f" ({nombre})"
@@ -388,18 +388,18 @@ class OdysseeCommands(commands.Cog):
                 await send_error(ctx, f"__{player.name}__ n'a pas assez de Drachmes pour donner")
         
         else:
-            check_player = player.object_del(object_name, nombre)
-            check_target = target.object_add(object_name, nombre)
+            check_player = player.object_del(*player.have(object_name), nombre)
+            check_target = target.object_add(*target.have(object_name), nombre, object_name)
             is_ok = True
 
             if not check_player:
                 await send_error(ctx, f"__{player.name}__ ne possède pas cet objet : '{objet}' ou pas en assez grande quantité")
-                if check_target: target.object_del(object_name, nombre, True)
+                if check_target: target.object_del(*target.have(object_name), nombre, True)
                 is_ok = False
 
             if not check_target:
                 await send_error(ctx, f"__{target.name}__ a déjà cet objet : '{objet}'")
-                if check_player: player.object_add(object_name, nombre)
+                if check_player: player.object_add(*player.have(object_name), nombre, object_name)
                 is_ok = False
 
             if is_ok:
@@ -422,14 +422,14 @@ class OdysseeCommands(commands.Cog):
         await ctx.send(f"__{player.name}__ lance {nombre} dé{('', 's')[nombre > 1]} à {faces} faces : {result} / {nombre * faces}.")
 
 
-    @commands.command(help="Effectue un lancer de dé dans dans une capacité ou une compétence.", brief="Effectuer un lancer dans une capacité")
+    @commands.command(help=f"Effectue un lancer de dé dans dans une capacité ou une compétence.\n\n__Capacités connues :__ {', '.join(get_capacities()[: 6])}", brief="Effectuer un lancer dans une capacité")
     @commands.check(server_id)
     @commands.check(awareness)
     async def lancer(self, ctx, capacite: str):
         player = self.get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        capacities = ("Courage", "Force", "Habileté", "Rapidité", "Intelligence", "Défense")
+        capacities = [i.capitalize() for i in get_capacities()[: 6]]
         capacite = capacite.capitalize()
 
         if not capacite in capacities:
@@ -466,7 +466,7 @@ class OdysseeCommands(commands.Cog):
         else:
             index = capacities.index(capacite)
             comment = ("échec critique", "échec", "succès", "succès critique")[player.capacity_roll(index)]
-            await ctx.send(f"__{player.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index in (2, 4)] + capacities[index])
+            await ctx.send(f"__{player.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index in (2, 4)] + capacities[index] + ".")
 
     
     @commands.command(help="Utiliser ou consulter ses pouvoirs. Le premier argument est le nom du pouvoir à utiliser, le second correspond au nom de l'adversaire visé (dans le cas où le pouvoir utilisé requiert un adversaire).\n\n Si vous laissez ses deux argments vide, vous obtenez la liste de vos pouvoirs avec une description.", brief="Utiliser ou consulter ses pouvoirs")
@@ -621,7 +621,7 @@ class OdysseeCommands(commands.Cog):
         if obj.object_type not in (1, 5, 8) or nombre < 1: nombre = 1
 
         if player.stat[8] >= nombre * obj.stat[8]:
-            check = player.object_add(nom, nombre)
+            check = player.object_add(*player.have(nom), nombre, nom)
 
             if check:
                 player.stat[8] -= nombre * obj.stat[8]
@@ -646,15 +646,15 @@ class OdysseeCommands(commands.Cog):
         shop_id = player.in_shop()
         if shop_id == -1: await send_error(ctx, f"__{player.name}__ n'est pas dans un magasin"); return
 
-        obj = get_object(get_official_name(nom.lower()), shop_id)
-        if obj.shop_id == -1: await send_error(ctx, f"l'objet : '{nom}' n'intéresse personne ici"); return
-
+        check, obj = player.have(nom)
+        
+        if obj.shop_id == shop_id: await send_error(ctx, f"l'objet : '{nom}' n'intéresse personne ici"); return
         if obj.object_type not in (1, 5, 8) or nombre < 1: nombre = 1
 
-        check = player.object_del(nom, nombre)
+        check = player.object_del(check, obj, nombre)
 
         if check:
-            cost = (3 * nombre * obj.stat[8]) // 4
+            cost = (3 * nombre * obj.stat[8]) // 4 + randint(0, 3) * player.capacity_roll(4) 
             nombre = ("", f" ({nombre})")[nombre > 1]
             player.stat[8] += cost
             await ctx.send(f"__{player.name}__ a vendu l'objet : '{nom}{nombre}' pour {cost} Drachmes.")
@@ -814,7 +814,7 @@ class OdysseeCommands(commands.Cog):
 
                     damage = phase_3(fighters, attacker, defender)
                     if damage:
-                        if fighters[defender].stat[6] < 100 + (fighters[defender].get_level() - 1) * 25: fighters[defender].state = 3
+                        if fighters[defender].stat[6] < fighters[defender].get_max_health(): fighters[defender].state = 3
                         message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
                     else:
                         message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
@@ -827,7 +827,7 @@ class OdysseeCommands(commands.Cog):
                             fighters[attacker].stat[8] += fighters[defender].stat[8]
                         
                         for obj in fighters[defender].inventory:
-                            check = fighters[attacker].object_add(obj.name, obj.quantity)
+                            check = fighters[attacker].object_add(*fighters[attacker].have(obj.name), obj.quantity, obj.name)
                             if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
 
                         self.data_player.pop(fighters[defender].id)

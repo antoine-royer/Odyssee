@@ -136,6 +136,8 @@ class AdminCommands(commands.Cog):
         
         if capacite in capacities:
             player.stat[capacities.index(capacite)] += valeur
+            if player.state == 0 and player.stat[6] < player.get_max_health(): player.state = 3
+        elif player.state == 3 and player.stat[6] >= player.get_max_health(): player.state = 0
             
             if capacite != "argent":
                 msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} point{('', 's')[abs(valeur) > 1]} "
@@ -152,14 +154,14 @@ class AdminCommands(commands.Cog):
             await ctx.send(f"__{player.name}__ se dirige vers {valeur}.")
 
         elif capacite == "objet+":
-            check = player.object_add(valeur, nombre)
+            check = player.object_add(*player.have(valeur), nombre, valeur)
             nombre = ("", f" ({nombre})")[nombre > 1]
             
             if check: await ctx.send(f"__{player.name}__ récupère l'objet : '{valeur}'{nombre}.")
             else: await send_error(ctx, f"__{player.name}__ a déjà l'objet : '{valeur}'")
 
         elif capacite == "objet-":
-            check = player.object_del(valeur, nombre)
+            check = player.object_del(*player.have(valeur), nombre)
             nombre = ("", f" ({nombre})")[nombre > 1]
 
             if check: await ctx.send(f"__{player.name}__ a perdu l'objet : '{valeur}'{nombre}.")
@@ -235,7 +237,11 @@ class AdminCommands(commands.Cog):
                 cap_index = capacities.index(capacite)
                 player.inventory[index].stat[cap_index] += valeur
                 if obj.object_type == 0: player.stat[cap_index] += valeur
-                await ctx.send(f"L'objet '{objet}' de __{player.name}__ {('perd', 'gagne')[valeur > 0]} {valeur} point{('', 's')[valeur > 1]} en {capacite.capitalize()}.")
+                
+                if cap_index == 8:
+                    await ctx.send(f"L'objet '{objet}' de __{player.name}__ {('perd', 'gagne')[valeur > 0]} {valeur} Drachme{('', 's')[valeur > 1]} de valeur.")
+                else:
+                    await ctx.send(f"L'objet '{objet}' de __{player.name}__ {('perd', 'gagne')[valeur > 0]} {valeur} point{('', 's')[valeur > 1]} en {capacite.capitalize()}.")
             
             elif capacite == "type":
                 new_type = get_type_by_id(valeur)
@@ -323,7 +329,7 @@ class AdminCommands(commands.Cog):
         check = get_official_name(nom)
         if check: await send_error(f"l'objet : '{nom}' existe déjà"); return
 
-        table = sqlite3.connect("BDD/odyssee_shop.db")
+        table = sqlite3.connect("BDD/odyssee_objects.db")
         c = table.cursor()
 
         c.execute(f"INSERT INTO objets VALUES ({magasin}, {type_objet}, '{nom}', {courage}, {force}, {habilete}, {rapidite}, {intelligence}, {defense}, {vie}, {mana}, {argent}, {poids})")
@@ -407,7 +413,7 @@ class AdminCommands(commands.Cog):
                             fighters[attacker].stat[8] += fighters[defender].stat[8]
                         
                         for obj in fighters[defender].inventory:
-                            check = fighters[attacker].object_add(obj.name, obj.quantity)
+                            check = fighters[attacker].object_add(*fighters[attacker].have(obj.name), obj.quantity, obj.name)
                             if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
 
                         self.data_player.pop(fighters[defender].id)

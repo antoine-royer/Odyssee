@@ -122,7 +122,7 @@ def power_use(power_id):
 def nyctalopie(user, players, target=None):
     pts = 5 * user.get_level()
     user.stat[2] += pts    
-    return f"__{user.name}__ a une vision améliorée."
+    return f"__{user.name}__ a une vision améliorée et gagne {pts} points d'Habileté."
 
 
 def vol(user, players, target=None):
@@ -138,7 +138,7 @@ def vol(user, players, target=None):
 def effroi(user, players, target=None):
     pts = 10 * user.get_level()
     target.capacity_modify(3, -pts)
-    return f"__{target.name}__ est effrayé(e)."
+    return f"__{target.name}__ est paralysé(e) par la peur et perd {pts} points de Rapidité."
 
 
 def guerison(user, players, target=None):
@@ -168,7 +168,7 @@ def chant(user, players, target=None):
         if player.place == user.place:
             player.stat[2] += pts
             player.stat[3] += pts
-            msg += f" - __{player.name}__ gagne en habileté et en rapidité.\n"
+            msg += f" - __{player.name}__ gagne en Habileté et en Rapidité.\n"
     return msg
 
 
@@ -177,7 +177,7 @@ def invocation(user, players, target=None):
     for capacity_index in (1, 2):
         target.capacity_modify(capacity_index, -pts)
 
-    return f"Le démon que vous avez invoqué provoque une terreur infinie chez __{target.name}__."
+    return f"Le démon que vous avez invoqué provoque une terreur infinie chez __{target.name}__. Votre cible, perd {pts} points de Courage et de Force."
 
 
 def poison(user, players, target=None):
@@ -185,7 +185,7 @@ def poison(user, players, target=None):
     if target.stat[6] > pts:
         target.state = 1
         target.capacity_modify(6, -pts)
-        return f"__{target.name}__ perd {pts} points de Vie."
+        return f"__{target.name}__ perd {pts} points de Vie et devient empoisonné."
     else:
         target.state = 2
         target.stat[6] = 1
@@ -196,14 +196,14 @@ def regeneration(user, players, target=None):
     pts = 3 * user.get_level()
     for capacity_index in range(5):  # From Courage to Intelligence
         user.capacity_modify(capacity_index, pts)
-    return f"__{user.name}__ se régénère."
+    return f"__{user.name}__ se régénère et gagne {pts} points de Courage, de Force, d'Habileté, de Rapidité et d'Intelligence."
 
 
 def charme(user, players, target=None):
     pts = 3 * user.get_level()
     for capacity_index in range(4):
         target.capacity_modify(capacity_index, -pts)
-    return f"__{target.name}__ tombe sous le charme de __{user.name}__"
+    return f"__{target.name}__ tombe sous le charme de __{user.name}__ et perd {pts} points de Courage, de Force, d'Habileté et de Rapidité."
 
 
 def boule_de_feu(user, players, target=None):
@@ -211,7 +211,8 @@ def boule_de_feu(user, players, target=None):
     if target.stat[6] > pts:
         for capacity_index in (0, 1, 6):
             target.capacity_modify(capacity_index, -pts)
-        return f"__{target.name}__ est atteint par la boule de feu !"
+        if target.state == 0 and target.stat[6] < target.get_max_health(): target.state = 3
+        return f"__{target.name}__ est atteint par la boule de feu ! Votre cible perd {pts} points de Courage, de Force et de Vie."
     else:
         target.state = 2
         target.stat[6] = 1
@@ -231,13 +232,13 @@ def eclair(user, players, target=None):
     pts = 5 * user.get_level()
     for capacity in (1, 4):
         target.capacity_modify(capacity, -pts)
-    return f"__{target.name}__ s'est fait foudroyer."
+    return f"__{target.name}__ s'est fait foudroyer et perd {pts} points de Force, d'Habileté et de Rapidité."
 
 
 def protection(user, players, target=None):
     pts = 10 * user.get_level()
     user.capacity_modify(4, pts)
-    return f"__{user.name}__ gagne en défense."
+    return f"__{user.name}__ gagne {pts} points de Défense."
 
 
 def fatigue(user, players, target=None):
@@ -250,7 +251,7 @@ def fatigue(user, players, target=None):
 def vitesse(user, players, target=None):
     pts = 15 * user.get_level()
     user.capacity_modify(3, pts)
-    return f"__{user.name}__ devient plus rapide."
+    return f"__{user.name}__ gagne {pts} points de Rapidité."
 
 
 def charge(user, players, target=None):
@@ -259,7 +260,8 @@ def charge(user, players, target=None):
 
     if target.stat[6] > pts:
         target.capacity_modify(6, -pts)
-        return f"__{user.name}__ se jette sur __{target.name}__."
+        if target.state == 0 and target.stat[6] < target.get_max_health(): target.state = 3
+        return f"__{user.name}__ se jette sur __{target.name}__ qui perd {pts} points de Vie."
     else:
         target.state = 2
         target.stat[6] = 1
@@ -271,19 +273,20 @@ def pourfendre(user, players, target=None):
 
     if target.stat[6] > pts:
         target.capacity_modify(6, -pts)
-        return f"__{target.name}__ se fait transpercer."
+        if target.state == 0 and target.stat[6] < target.get_max_health(): target.state = 3
+        return f"__{target.name}__ se fait transpercer et perd {pts} points de Vie."
     else:
         target.state = 2
         target.stat[6] = 1
-        return f"Choqué par la douleur, __{target.name}__ s'évanouit"
+        return f"Choqué(e) par la douleur, __{target.name}__ s'évanouit."
 
 
 def antidote(user, players, target=None):
     if target.state == 1:
         target.state = 0
-        return f"__{target.name}__ n'est plus empoisonné."
+        return f"__{target.name}__ n'est plus empoisonné(e)."
     else:
-        return f"__{target.name}__ n'était pas empoisonné."
+        return f"__{target.name}__ n'était pas empoisonné(e)."
 
 
 def chant_de_guerre(user, players, target=None):
@@ -295,5 +298,5 @@ def chant_de_guerre(user, players, target=None):
         if player.place == user.place:
             player.capacity_modify(0, pts)
             player.capacity_modify(1, pts)
-            msg += f" - __{player.name}__ gagne en force et en courage.\n"
+            msg += f" - __{player.name}__ gagne {pts} points de Courage et de Force.\n"
     return msg

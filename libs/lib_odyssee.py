@@ -83,7 +83,7 @@ def phase_1(player, target):
 
 
 def phase_2(fighter):
-    return fighter.capacity_roll(2) >= 2 or fighter.capacity_roll(1) == 3
+    return (fighter.capacity_roll(2) >= 2) or (fighter.capacity_roll(1) == 3)
 
 
 def phase_3(fighters, attacker, defender):

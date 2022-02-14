@@ -14,13 +14,13 @@ def stat_gen(factor, level=1, enemy=False):
     if level < 1: level = 1
     color = randint(0, 16777215)
     
-    stat = [int(factor[i] * randint(20*(level-1), 20*level)) for i in range(5)]
+    stat = [int(factor[i] * randint(20 * (level - 1), 20 * level)) for i in range(5)]
     stat.append(0)
     
     if enemy:
-        stat += [randint(25, 100 + 50 * (level - 1)), 5, randint(5 * level, 10 * level), 0, color]
+        stat += [randint(25, 100 + 50 * (level - 1)), 5, randint(5 * level, 10 * (level + 1)), 0, color]
     else:
-        stat += [100, 5, 15, 0, color]
+        stat += [100, 5, 30, 0, color]
     return stat
 
 
@@ -87,7 +87,7 @@ class Player:
 
     def capacity_roll(self, capacity_index):
         overweight = self.isoverweight()
-        if self.state == 3 or overweight: malus = 5 * self.get_level() + (overweight // 10)
+        if self.state == 3 or overweight: malus = (self.get_max_health() - self.stat[6]) // 10 + (overweight // 10)
         else: malus = 0
         
         point = (roll_die() + self.stat[capacity_index] - malus) / (40 * self.get_level())
@@ -118,9 +118,7 @@ class Player:
 
         return -1, get_object(object_name)
 
-    def object_add(self, object_name, nb):
-        index, obj = self.have(object_name)
-
+    def object_add(self, index, obj, nb, object_name):
         # Objet stockable en plusieurs exemplaire
         if obj.object_type in (1, 5, 8):
             self.stat[9] += nb * obj.stat[9]
@@ -146,9 +144,7 @@ class Player:
         else:
             return 0
 
-    def object_del(self, object_name, nb, force_mode=False):
-        index, obj = self.have(object_name)
-
+    def object_del(self, index, obj, nb, force_mode=False):
         # Objet non possédé ou pas en assez grande quantité
         if index == -1 or (self.inventory[index].quantity < nb and not force_mode):
             return 0
