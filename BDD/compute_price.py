@@ -11,15 +11,17 @@ def compute():
 	database = c.execute("SELECT * FROM objets").fetchall()
 
 	for obj in database:
-		if obj[0] == -1:
-			price = 0
+		# si l'objet n'est rattaché à aucun magasin
+		if obj[0] == -1: price = 0
 		
+		# sinon
 		else:
 			price = get_price(obj[3: -2])
 			if price == 0: price = 1
 			elif price < 0: price = abs(price)
 		
-		if obj[1] != 6:
+		# si l'objet n'est ni un moyen de transport, ni un outil, on met à jour
+		if not obj[1] in (6, 7):
 			c.execute(f"""
 				UPDATE objets SET argent = {price}
 				WHERE nom = \"{obj[2]}\"
