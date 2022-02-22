@@ -876,7 +876,7 @@ class OdysseeCommands(commands.Cog):
 
         # Empoisonné
         if player.state == 1:
-            player.stat[6] -= random(0, 5 * lvl)
+            player.stat[6] -= random(1, 12) * lvl
 
         # Inconscient, endormi
         if player.state in (2, 4):

@@ -456,7 +456,7 @@ class AdminCommands(commands.Cog):
 
             # Empoisonné
             if npc.state == 1:
-                npc.stat[6] -= random(0, 5 * lvl)
+                npc.stat[6] -= random(1, 12) * lvl
 
             # Inconscient, endormi
             if npc.state in (2, 4):
