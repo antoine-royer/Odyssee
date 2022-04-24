@@ -1,5 +1,5 @@
 # --------------------------------------------------
-# Odyssée (version 5.0.6)
+# Odyssée (version 5.3.4)
 # by Sha-chan~
 # last modification on April 24, 2022
 #
