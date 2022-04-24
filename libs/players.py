@@ -74,7 +74,7 @@ class Player:
         else: return 0
 
     def get_max_weight(self):
-        return 10 * (self.stat[1] // 5)
+        return 2 * self.stat[1]
 
     def get_max_health(self):
         return (100 + (self.get_level() - 1) * 25)

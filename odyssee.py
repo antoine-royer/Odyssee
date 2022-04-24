@@ -1,7 +1,7 @@
 # --------------------------------------------------
-# Odyssée (version 5.0.5)
+# Odyssée (version 5.0.6)
 # by Sha-chan~
-# last modification on November 2, 2021
+# last modification on April 24, 2022
 #
 # code provided with licence :
 # GNU General Public Licence v3.0

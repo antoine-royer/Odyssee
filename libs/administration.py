@@ -21,10 +21,11 @@ def make_embed(fields, title, description, color=8421504, inline=False):
 
 
 async def is_admin(ctx):
-    if ctx.author.id not in data_admin:
+    if str(ctx.guild.id) in data_admin and ctx.author.id in data_admin[str(ctx.guild.id)]:
+        return True
+    else:
         await send_error(ctx, "commande non-autorisée")
         return False
-    return True
 
 
 class AdminCommands(commands.Cog):
@@ -137,7 +138,7 @@ class AdminCommands(commands.Cog):
         if capacite in capacities:
             player.stat[capacities.index(capacite)] += valeur
             if player.state == 0 and player.stat[6] < player.get_max_health(): player.state = 3
-        elif player.state == 3 and player.stat[6] >= player.get_max_health(): player.state = 0
+            elif player.state == 3 and player.stat[6] >= player.get_max_health(): player.state = 0
             
             if capacite != "argent":
                 msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} point{('', 's')[abs(valeur) > 1]} "
