@@ -15,19 +15,19 @@ from libs.wikiphyto import wikiphyto_api
 
 # export_save : enregistre les joueurs dans 'save.txt'
 def export_save(data_player, data_kick, guild_id):
-    print("Partie enregistrée")
-    save = f"""{{
-    "players": {[data_player[player_id].export() for player_id in data_player]},
-    "kicks": {data_kick},
-    "guild_id": {guild_id}
-}}"""
+    print(" - Partie enregistrée -")
     with open("save.json", "w") as file:
-        file.write(str(save))
+        file.write(json.dumps(
+            {
+                "players": [data_player[player_id].export() for player_id in data_player], 
+                "kicks": data_kick, 
+                "guild_id": guild_id
+            }, indent=4))
 
 
 # load_save : charge les joueurs depuis 'save.txt'
 def load_save():
-    print("Chargment de la partie")
+    print(" - Chargement de la partie - ")
     try:
         with open("save.json", "r") as file:
             data = json.loads(file.read())

@@ -14,7 +14,7 @@ class Object:
         self.quantity = quantity
 
     def export(self):
-        return list(self.name, self.official_name, self.stat, self.object_type, self.shop_id, self.quantity)
+        return [self.name, self.official_name, self.stat, self.object_type, self.shop_id, self.quantity]
 
 
 
