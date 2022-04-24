@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
+import json
 
 from libs.lib_odyssee import *
 
-guild_id, data_admin = None, []
+guild_id, data_admin = None, {}
 
 
 def make_embed(fields, title, description, color=8421504, inline=False):
@@ -90,7 +91,7 @@ class AdminCommands(commands.Cog):
                 await ctx.send(embed=embed)
 
 
-    @commands.command(name="joueur+", help="Permet d'ajouter un personnage non jouable au jeu en cours. Préciser l'espèce du joueur et son nom.", brief="Ajouter un PnJ")
+    @commands.command(name="joueur+", help="Permet d'ajouter un personnage non jouable au jeu en cours. Préciser l'espèce du joueur et son nom.", brief="[ADMIN] Ajouter un PnJ")
     @commands.check(is_admin)
     async def joueur_plus(self, ctx, nom: str, espece: str, niveau: int=0):
         if self.get_player_from_name(nom):
@@ -122,7 +123,7 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"le joueur : '{nom}' n'existe pas")
 
 
-    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, les états, les pouvoirs et les compétences.", brief="Modifier un joueur")
+    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, les états, les pouvoirs et les compétences.", brief="[ADMIN] Modifier un joueur")
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
         player_id = self.get_player_from_name(nom)
@@ -219,7 +220,7 @@ class AdminCommands(commands.Cog):
         
         self.save_game()
 
-    @commands.command(help="Permet de modifier les statistiques d'un objet possédé par un joueur.", brief="Permet de modifier les caractéristique d'une arme")
+    @commands.command(help="Permet de modifier les statistiques d'un objet possédé par un joueur.", brief="[ADMIN] Permet de modifier les caractéristique d'une arme")
     @commands.check(is_admin)
     async def modifier_objet(self, ctx, nom: str, objet:str, capacite: str, valeur: int):
         player_id = self.get_player_from_name(nom)
@@ -258,7 +259,7 @@ class AdminCommands(commands.Cog):
         self.save_game()
 
 
-    @commands.command(help="Supprime la totalité de la sauvegarde du jeu en cours.", brief="Supprime la sauvegarde")
+    @commands.command(help="Supprime la totalité de la sauvegarde du jeu en cours.", brief="[ADMIN] Supprime la sauvegarde")
     @commands.check(is_admin)
     async def formatage(self, ctx):
         self.data_player.clear()
@@ -269,7 +270,7 @@ class AdminCommands(commands.Cog):
         self.save_game()
 
 
-    @commands.command(help="Supprime un joueur et l'empêche de créer un nouveau personnage.", brief="Kicker un joueur")
+    @commands.command(help="Supprime un joueur et l'empêche de créer un nouveau personnage.", brief="[ADMIN] Kick un joueur")
     @commands.check(is_admin)
     async def kick(self, ctx, nom: str):
         player_id = self.get_player_from_name(nom)
@@ -285,7 +286,7 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"le joueur : '{nom}' n'existe pas")
 
 
-    @commands.command(help="Autorise un joueur kické à revenir. L'id du joueur est à connaître.", brief="Unkick un joueur")
+    @commands.command(help="Autorise un joueur kické à revenir. L'id du joueur est à connaître.", brief="[ADMIN] Unkick un joueur")
     @commands.check(is_admin)
     async def unkick(self, ctx, id_joueur: int):
         if id_joueur in self.data_kick:
@@ -296,14 +297,15 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, "ce joueur n'est pas kické")
 
 
-    @commands.command(help="Charge la sauvegarde donnée en argument. La sauvegarde doit être en fichier joint", brief="Charger une partie")
+    @commands.command(help="Charge la sauvegarde donnée en argument. La sauvegarde doit être en fichier joint", brief="[ADMIN] Charger une partie")
     @commands.check(is_admin)
     async def charger(self, ctx):
         global guild_id
         self.data_player.clear()
         self.data_kick.clear()
 
-        data_player, data_kick, guild_id = eval(await ctx.message.attachments[0].read())
+        data = json.loads(await ctx.message.attachments[0].read())
+        data_player, data_kick, guild_id = data["players"], data["kicks"], data["guild_id"]
         
         for player in data_player:
             self.data_player.update({player[0]: Player(*player)})
@@ -320,11 +322,11 @@ class AdminCommands(commands.Cog):
     async def sauvegarde(self, ctx):
         self.save_game()
 
-        with open("save.txt", "r") as file:
-            await ctx.send(f"**Sauvegarde**", file=discord.File("save.txt"))
+        with open("save.json", "r") as file:
+            await ctx.send(f"**Sauvegarde**", file=discord.File("save.json"))
 
 
-    @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.\n\n__Magasins :__\n" + "\n".join([f"{index} - {value[0]}" for index, value in enumerate(get_shop_name())]) + "\n\n__Types :__\n" + "\n".join([f"{index} - {value}" for index, value in get_all_types()]), brief="Ajouter un objet")
+    @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.\n\n__Magasins :__\n" + "\n".join([f"{index} - {value[0]}" for index, value in enumerate(get_shop_name())]) + "\n\n__Types :__\n" + "\n".join([f"{index} - {value}" for index, value in get_all_types()]), brief="[ADMIN] Ajouter un objet")
     @commands.check(is_admin)
     async def ajout_objet(self, ctx, magasin: int, type_objet: int, nom: str, courage: int, force: int, habilete: int, rapidite: int, intelligence: int, defense: int, vie: int, mana: int, argent: int, poids: int):
         check = get_official_name(nom)
@@ -341,7 +343,7 @@ class AdminCommands(commands.Cog):
         await ctx.send(f"L'objet : '{nom}' a été ajouté à la base de données.")
 
 
-    @commands.command(help="Un joueur se fait attaquer par un PnJ", brief="Attaquer un joueur")
+    @commands.command(help="Un joueur se fait attaquer par un PnJ", brief="[ADMIN] Attaquer un joueur")
     @commands.check(is_admin)
     async def pnj_combat(self, ctx, joueur: str, adversaire: str, arme: str=None):
         pnj = self.get_player_from_name(joueur)
@@ -434,7 +436,7 @@ class AdminCommands(commands.Cog):
         self.save_game()
 
 
-    @commands.command(help="Fait dormir les PnJ", brief="Fait dormir les PnJ")
+    @commands.command(help="Fait dormir les PnJ", brief="[ADMIN] Fait dormir les PnJ")
     @commands.check(is_admin)
     async def pnj_dormir(self, ctx):
         npc_names = []
@@ -475,7 +477,7 @@ class AdminCommands(commands.Cog):
         self.save_game()
 
 
-    @commands.command(help="Permet de faire en sorte qu'un PnJ utilise un de ses pouvoirs", brief="Utiliser un pouvoir d'un PnJ")
+    @commands.command(help="Permet de faire en sorte qu'un PnJ utilise un de ses pouvoirs", brief="[ADMIN] Utiliser un pouvoir d'un PnJ")
     @commands.check(is_admin)
     async def pnj_pouvoir(self, ctx, joueur: str, nom: str=None, adversaire: str=None):
         pnj = self.get_player_from_name(joueur)

@@ -30,5 +30,6 @@ for cmnd_module in (OdysseeCommands, AdminCommands):
 async def on_ready():
     activity = discord.Activity(type=discord.ActivityType.watching, name=config["PREFIX"] + "aide")
     await odyssee.change_presence(activity=activity)
+    print("Connecté")
 
 odyssee.run(config["TOKEN"])

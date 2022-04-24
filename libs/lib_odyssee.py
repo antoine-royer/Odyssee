@@ -1,7 +1,9 @@
+from bs4 import BeautifulSoup
 from math import ceil
+import json
 from random import randint
 import requests
-from bs4 import BeautifulSoup
+
 from libs.players import *
 from libs.travel import *
 from libs.states import *
@@ -14,8 +16,12 @@ from libs.wikiphyto import wikiphyto_api
 # export_save : enregistre les joueurs dans 'save.txt'
 def export_save(data_player, data_kick, guild_id):
     print("Partie enregistrée")
-    save = [[data_player[player_id].export() for player_id in data_player], data_kick, guild_id]
-    with open("save.txt", "w") as file:
+    save = f"""{{
+    "players": {[data_player[player_id].export() for player_id in data_player]},
+    "kicks": {data_kick},
+    "guild_id": {guild_id}
+}}"""
+    with open("save.json", "w") as file:
         file.write(str(save))
 
 
@@ -23,8 +29,9 @@ def export_save(data_player, data_kick, guild_id):
 def load_save():
     print("Chargment de la partie")
     try:
-        with open("save.txt", "r") as file:
-            data_player, data_kick, guild_id = eval(file.read())
+        with open("save.json", "r") as file:
+            data = json.loads(file.read())
+            data_player, data_kick, guild_id = data["players"], data["kicks"], data["guild_id"]
 
         data_player = {player[0]: Player(*player) for player in data_player}
         print("... partie chargée")
@@ -32,8 +39,13 @@ def load_save():
     
     except:
         print("... aucune partie trouvée\n... création d'une nouvelle partie")
-        with open("save.txt", "w") as file:
-            file.write("[[], [], 0]")
+        with open("save.json", "w") as file:
+            file.write("""{
+    "players": [],
+    "kicks": [],
+    "guild_id": 0
+}""")
+
         return {}, [], 0
 
 

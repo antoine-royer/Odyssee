@@ -63,7 +63,7 @@ class Player:
             self.abilities = []
 
     def export(self):
-        return self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state, self.abilities
+        return list(self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state, self.abilities)
 
     def isalive(self):
         return self.stat[6] > 0

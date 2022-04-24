@@ -11,7 +11,7 @@ class Power:
         self.power_id = power_id
 
     def export(self):
-        return self.name, self.description, self.enemy, self.power_id
+        return list(self.name, self.description, self.enemy, self.power_id)
 
 
 # --- Database gestion --- #
