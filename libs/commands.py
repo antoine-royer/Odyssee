@@ -37,20 +37,28 @@ def get_player_from_id(player_id):
         return None
 
 
-def get_player_from_name(player_name):
+def get_id_from_name(player_name):
     player_name = player_name.lower()
     for player_id in data_player:
         if data_player[player_id].name.lower() == player_name:
             return player_id
     return None
 
+def get_player_from_name(player_name):
+    player_name = player_name.lower()
+    for player_id in data_player:
+        if data_player[player_id].name.lower() == player_name:
+            return data_player[player_id]
+    return None
+
+
 
 async def awareness(ctx):
-    if ctx.author.id not in glb_players:
+    if ctx.author.id not in data_player:
         await ctx.send(f"{ctx.author.name} n'est pas un joueur enregistré")
         return False
 
-    player = data_players[ctx.author.id]
+    player = data_player[ctx.author.id]
     if player.state == 2:
         await ctx.send(f"__{player.name}__ est inconscient(e).")
         return False
@@ -659,7 +667,7 @@ class OdysseeCommands(commands.Cog):
 
         check, obj = player.have(nom)
         
-        if obj.shop_id == shop_id: await send_error(ctx, f"l'objet : '{nom}' n'intéresse personne ici"); return
+        if obj.shop_id != shop_id: await send_error(ctx, f"l'objet : '{nom}' n'intéresse personne ici"); return
         if obj.object_type not in (1, 5, 8) or nombre < 1: nombre = 1
 
         check = player.object_del(check, obj, nombre)
@@ -986,7 +994,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name="joueur+", help="Permet d'ajouter un personnage non jouable au jeu en cours. Préciser l'espèce du joueur et son nom.", brief="Ajouter un PnJ")
     @commands.check(is_admin)
     async def joueur_plus(self, ctx, nom: str, espece: str, niveau: int=0):
-        if get_player_from_name(nom):
+        if get_id_from_name(nom):
             await send_error(ctx, f"le joueur : '{nom}' existe déjà")
         else:
             if niveau <= 0: niveau = randint(1, get_avg_level(self.data_player) + 2)
@@ -1004,7 +1012,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name="joueur-", help="Permet de supprimer un joueur sans le kicker.", brief="Supprimer un joueur")
     @commands.check(is_admin)
     async def joueur_moins(self, ctx, nom: str):
-        player_id = get_player_from_name(nom)
+        player_id = get_id_from_name(nom)
 
         if player_id:
             self.data_player.pop(player_id)
@@ -1018,7 +1026,7 @@ class AdminCommands(commands.Cog):
     @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, les états, les pouvoirs et les compétences.", brief="Modifier un joueur")
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
-        player_id = get_player_from_name(nom)
+        player_id = get_id_from_name(nom)
         if not player_id: await send_error(ctx, f"le joueur : '{nom}' n'existe pas"); return
 
         player = self.data_player[player_id]
@@ -1037,9 +1045,13 @@ class AdminCommands(commands.Cog):
                 msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} point{('', 's')[abs(valeur) > 1]} "
                 if capacite == "habileté": msg += "d'Habileté"
                 elif capacite == "intelligence": msg += "d'Intelligence"
-                else: msg += f"de {capacite.capitalize()}"
+                else: msg += f"de {capacite.capitalize()}."
+
+                if not player.isalive():
+                    msg += f"\n__{player.name}__ est mort."
+                    self.data_player.pop(player.id)
             else:
-                msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} Drachme{('', 's')[abs(valeur) > 1]}"
+                msg = f"__{player.name}__ {('perd', 'gagne')[valeur > 0]} {abs(valeur)} Drachme{('', 's')[abs(valeur) > 1]}."
             
             await ctx.send(msg)
 
@@ -1115,7 +1127,7 @@ class AdminCommands(commands.Cog):
     @commands.command(help="Permet de modifier les statistiques d'un objet possédé par un joueur.", brief="Permet de modifier les caractéristique d'une arme")
     @commands.check(is_admin)
     async def modifier_objet(self, ctx, nom: str, objet:str, capacite: str, valeur: int):
-        player_id = get_player_from_name(nom)
+        player_id = get_id_from_name(nom)
         if not player_id: await send_error(ctx, f"le joueur : '{nom}' n'existe pas"); return
 
         player = self.data_player[player_id]
@@ -1166,7 +1178,7 @@ class AdminCommands(commands.Cog):
     @commands.command(help="Supprime un joueur et l'empêche de créer un nouveau personnage.", brief="Kick un joueur")
     @commands.check(is_admin)
     async def kick(self, ctx, nom: str):
-        player_id = get_player_from_name(nom)
+        player_id = get_id_from_name(nom)
 
         if player_id:
             self.data_player.pop(player_id)
@@ -1252,12 +1264,12 @@ class AdminCommands(commands.Cog):
     @commands.command(help="Un joueur se fait attaquer par un PnJ", brief="Attaquer un joueur")
     @commands.check(is_admin)
     async def pnj_combat(self, ctx, joueur: str, adversaire: str, arme: str=None):
-        pnj = get_player_from_name(joueur)
+        pnj = get_id_from_name(joueur)
         if not pnj: await send_error(ctx, f"{joueur} n'existe pas") ; return
         pnj = self.data_player[pnj]
         if pnj.id > 0 or pnj.state in (2, 4): await send_error(ctx, f"__{pnj.name}__ n'est pas un PnJ ou n'est pas en état de se battre") ; return
 
-        target = get_player_from_name(adversaire)
+        target = get_id_from_name(adversaire)
         if not target: await send_error(ctx, f"{adversaire} n'est pas un joueur enregistré") ; return
         target = self.data_player[target]
 
@@ -1386,7 +1398,7 @@ class AdminCommands(commands.Cog):
     @commands.command(help="Permet de faire en sorte qu'un PnJ utilise un de ses pouvoirs", brief="Utiliser un pouvoir d'un PnJ")
     @commands.check(is_admin)
     async def pnj_pouvoir(self, ctx, joueur: str, nom: str=None, adversaire: str=None):
-        pnj = get_player_from_name(joueur)
+        pnj = get_id_from_name(joueur)
         if not pnj: await send_error(ctx, f"{joueur} n'est pas un joueur enregistré"); return
         pnj = self.data_player[pnj]
         if pnj.id > 0 or pnj.state in (2, 4): await send_error(ctx, f"__{pnj.name}__ n'est pas un PnJ ou n'est pas en état de se battre") ; return
@@ -1394,7 +1406,7 @@ class AdminCommands(commands.Cog):
 
         if adversaire:
             name = adversaire
-            adversaire = get_player_from_name(adversaire)
+            adversaire = get_id_from_name(adversaire)
             if not adversaire: await send_error(ctx, f"{name} n'est pas un joueur enregistré"); return
             adversaire = self.data_player[adversaire]
 

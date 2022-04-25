@@ -35,7 +35,7 @@ def get_species(species_name):
     species_id = get_species_id(species_name)
 
     if species_id == -1:
-        return -1, species_name.capitalize(), 1.0, 1.0, 1.0, 1.0
+        return -1, species_name.capitalize(), 1.0, 1.0, 1.0, 1.0, 1.0
 
     table = sqlite3.connect("BDD/odyssee_powers.db")
     c = table.cursor()

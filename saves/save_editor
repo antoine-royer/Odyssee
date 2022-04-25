@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import json
 from tkinter import *
 from tkinter.filedialog import askopenfile
@@ -9,7 +11,7 @@ def display_player(event):
 
     def get_all():
         global player_displayed
-        data["players"][index][4] = [i.get() for i in capacities] + [player[4][5]] + [i.get() for i in miscellaneous]
+        data["players"][index][4] = [i.get() for i in capacities] + [player[4][5]] + [i.get() for i in miscellaneous] + player[4][9: ]
         with open(filename, "w") as file:
             file.write(json.dumps(data, indent=4))
         player_displayed = False
@@ -55,6 +57,7 @@ with open(filename, "r") as file:
 
 # Display players
 window = Tk()
+window.title("Save Editor")
 
 player_list = Listbox(window)
 for index, player in enumerate(data["players"]):
