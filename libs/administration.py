@@ -1,32 +1,9 @@
 import discord
 from discord.ext import commands
 import json
+import os
 
 from libs.lib_odyssee import *
-
-guild_id, data_admin = None, {}
-
-
-def make_embed(fields, title, description, color=8421504, inline=False):
-    embeds = []
-    nb = len(fields) // 25 + 1
-    index = 1
-    while fields:
-        embed = discord.Embed(title=f"{title} ({index}/{nb})", description=description, color=color)
-        for field in fields[: 25]:
-            embed.add_field(name=field[0], value=field[1], inline=inline)
-        fields = fields[25: ]
-        index += 1
-        embeds.append(embed)
-    return embeds
-
-
-async def is_admin(ctx):
-    if str(ctx.guild.id) in data_admin and ctx.author.id in data_admin[str(ctx.guild.id)]:
-        return True
-    else:
-        await send_error(ctx, "commande non-autorisée")
-        return False
 
 
 class AdminCommands(commands.Cog):
@@ -37,8 +14,8 @@ class AdminCommands(commands.Cog):
         data_admin = config["ADMIN"]
 
 
-    def save_game(self):
-        export_save(self.data_player, self.data_kick, self.guild_id)
+    def save_game(self, name=""):
+        export_save(self.data_player, self.data_kick, self.guild_id, name)
 
 
     def get_player_from_id(self, player_id):
@@ -299,19 +276,29 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Charge la sauvegarde donnée en argument. La sauvegarde doit être en fichier joint", brief="Charger une partie")
     @commands.check(is_admin)
-    async def charger(self, ctx):
+    async def charger(self, ctx, nom: str=""):
         global guild_id
-        self.data_player.clear()
-        self.data_kick.clear()
 
-        data = json.loads(await ctx.message.attachments[0].read())
-        data_player, data_kick, guild_id = data["players"], data["kicks"], data["guild_id"]
+
+        if ctx.message.attachments:
+            data = json.loads(await ctx.message.attachments[0].read())
+            data_player, data_kick, new_guild_id = data["players"], data["kicks"], data["guild_id"]
+        else:
+            if not nom: nom = str(ctx.guild.id)
+            data_player, data_kick, new_guild_id = search_save(nom)
         
+        if new_guild_id and new_guild_id != ctx.guild.id:
+            await send_error(ctx, "cette sauvegarde ne vient pas de ce serveur")
+
+        self.data_player.clear()
         for player in data_player:
             self.data_player.update({player[0]: Player(*player)})
 
+        self.data_kick.clear()
         for i in data_kick:
             self.data_kick.append(i)
+
+        guild_id = new_guild_id
 
         await ctx.send("Partie chargée.")
         self.save_game()
@@ -319,11 +306,12 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Renvoie le fichier de sauvegarde", brief="Obtenir la sauvegarde")
     @commands.check(is_admin)
-    async def sauvegarde(self, ctx):
-        self.save_game()
+    async def sauvegarde(self, ctx, nom: str=""):
+        if not nom: nom = str(ctx.guild.id)
+        self.save_game(nom)
 
-        with open("save.json", "r") as file:
-            await ctx.send(f"**Sauvegarde**", file=discord.File("save.json"))
+        with open(f"saves/save.json", "r") as file:
+            await ctx.send(f"**Sauvegarde**", file=discord.File("saves/save.json"))
 
 
     @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.\n\n__Magasins :__\n" + "\n".join([f"{index} - {value[0]}" for index, value in enumerate(get_shop_name())]) + "\n\n__Types :__\n" + "\n".join([f"{index} - {value}" for index, value in get_all_types()]), brief="Ajouter un objet")

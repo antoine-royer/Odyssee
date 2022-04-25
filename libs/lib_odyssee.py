@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from math import ceil
 import json
+import os
 from random import randint
 import requests
 
@@ -14,9 +15,11 @@ from libs.wikiphyto import wikiphyto_api
 
 
 # export_save : enregistre les joueurs dans 'save.txt'
-def export_save(data_player, data_kick, guild_id):
+def export_save(data_player, data_kick, guild_id, save_name=""):
+    if save_name: save_name = "_" + save_name
     print(" - Partie enregistrée -")
-    with open("save.json", "w") as file:
+    
+    with open(f"saves/save{save_name}.json", "w") as file:
         file.write(json.dumps(
             {
                 "players": [data_player[player_id].export() for player_id in data_player], 
@@ -26,10 +29,12 @@ def export_save(data_player, data_kick, guild_id):
 
 
 # load_save : charge les joueurs depuis 'save.txt'
-def load_save():
+def load_save(save_name=""):
+    if save_name: save_name = "_" + save_name
     print(" - Chargement de la partie - ")
+    
     try:
-        with open("save.json", "r") as file:
+        with open(f"saves/save{save_name}.json", "r") as file:
             data = json.loads(file.read())
             data_player, data_kick, guild_id = data["players"], data["kicks"], data["guild_id"]
 
@@ -39,13 +44,32 @@ def load_save():
     
     except:
         print("... aucune partie trouvée\n... création d'une nouvelle partie")
-        with open("save.json", "w") as file:
+        with open("saves/save.json", "w") as file:
             file.write("""{
     "players": [],
     "kicks": [],
     "guild_id": 0
 }""")
 
+        return {}, [], 0
+
+
+# search_save : recherche une save et la charge si elle existe
+def search_save(save_name):
+    save_name = f"save_{save_name}.json"
+    print(" - Recherche d'une partie -")
+    if save_name in os.listdir("saves"):
+        print("... partie trouvée")
+        with open(f"saves/{save_name}", "r") as file:
+            data = json.loads(file.read())
+            data_player, data_kick, guild_id = data["players"], data["kicks"], data["guild_id"]
+
+        # data_player = {player[0]: Player(*player) for player in data_player}
+        print("... partie chargée")
+        return data_player, data_kick, guild_id
+
+    else:
+        print("... partie introuvable")
         return {}, [], 0
 
 

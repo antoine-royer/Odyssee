@@ -1,19 +1,21 @@
 # --------------------------------------------------
-# Odyssée (version 5.3.4)
+# Odyssée (version 5.4.0)
 # by Sha-chan~
-# last modification on April 24, 2022
+# last modification on April 25, 2022
 #
 # code provided with licence :
 # GNU General Public Licence v3.0
 # --------------------------------------------------
 
-
-import json
 import discord
 from discord.ext import commands
+import json
+import os
 
-from libs.commands import OdysseeCommands, load_save
-from libs.administration import AdminCommands
+from libs.commands import OdysseeCommands, AdminCommands, load_save
+
+if not "saves" in os.listdir():
+    os.mkdir("saves")
 
 with open("config.json", "r") as file:
     config = json.load(file)
