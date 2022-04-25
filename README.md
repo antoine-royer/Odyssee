@@ -100,7 +100,7 @@ Dans votre répertoire personnel, allez dans le dossier `Odyssee` et créez un f
 
 À noter que le token doit être entre guillemets et doit rester secret.
 
-Le préfix vous permettra d'appeller le bot lorsque vous jouerez, prenez un charactère simple, de préférence unique, évitez les charactères déjà pris (*, /, _, …).
+Le préfix vous permettra d'appeller le bot lorsque vous jouerez, prenez un charactère simple, de préférence unique, évitez les charactères déjà pris (*, /, _…).
 
 Le sépérateur va séparer les arguments des commandes transmises au bot, de même vous pouvez mettre un caractère de votre choix. Évitez les virgules qui ne sont pas pratiques et les espaces qui produiront des erreurs.
 
@@ -129,7 +129,7 @@ Par exemple si le répertoire `Odyssee` est stocké dans un dossier `bots_discor
 Passons sur Discord !
 La commande pour accéder à l'assistance est affichée dans le status personnalisé du bot. Par défaut la commande est `+aide`.
 
-Pour accéder à la documentation des commandes administrateur : `+administration`
+Pour accéder à la documentation des commandes administrateur : `+aide_admin`
 
 ### Mettre le bot à jour
 
@@ -139,9 +139,9 @@ Si votre version du bot n'est plus à jour, vous pouvez mettre à jour votre dé
 
 dans un terminal.
 
-### Fichier créé par le bot
+### Fichiers créé par le bot
 
-Le seul fichier créé par le bot est `save.txt` qui contient toute les statistiques des joueurs. Ce fichier n'est pas crypté et est tout à fait modifiable à la main. Lorsque le bot est éteint, ce fichier constitue sa seule mémoire, le supprimer revient à détruire la partie.
+Les seuls fichiers créés par le bot sont les sauvegardes dans le dossier `saves`. Les sauvegardes sont au format json et contiennent toutes les statistiques des joueurs. Ce fichier n'est pas crypté et est tout à fait modifiable à la main. Lorsque le bot est éteint, ce fichier constitue sa seule mémoire, le supprimer revient à détruire la partie.
 
 Normalement, si le fichier n'est pas corrompu, il ne devrait pas y avoir de problème de lecture. Mais faire un duplicata du fichier peut-être judicieux en cas de modification manuelle du fichier.
 
