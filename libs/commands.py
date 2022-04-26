@@ -512,7 +512,7 @@ class OdysseeCommands(commands.Cog):
                 await send_error(ctx, f"__{player.name}__ ne possède pas le pouvoir : '{nom}'")
                 return
 
-            if player.stat[7] <= 0:
+            if player.stat[7] <= power.mana_cost:
                 await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue.")
                 return
 
@@ -520,17 +520,19 @@ class OdysseeCommands(commands.Cog):
                 await send_error(ctx, f"le sort '{nom}' nécessite une cible")
                 return
 
-            player.stat[7] -= 1
+            player.stat[7] -= power.mana_cost
             await ctx.send(f"__{player.name}__ utilise {nom} :\n" + power_use(power.power_id)(player, self.data_player, adversaire))
 
         else:   
             fields = []
             for power in player.power:
-                description = power.description + ("", " (cible requise)")[power.enemy]
+                description = f"{power.description} (coût en Mana : {power.mana_cost})" + ("", " (cible requise)")[power.enemy]
                 fields.append((power.name.capitalize(), description))
             
             for embed in make_embed(fields, f"Pouvoirs de {player.name}", "Pouvoirs spéciaux connus et descriptions", player.stat[10]):
                 await ctx.send(embed=embed)
+
+        save_game()
 
 
     @commands.command(help="Vous permer d'apprendre de nouveau sort. le nom du sort est obligatoire.", brief="Apprend un nouveau pouvoir spécial")
@@ -833,7 +835,7 @@ class OdysseeCommands(commands.Cog):
 
                     damage = phase_3(fighters, attacker, defender)
                     if damage:
-                        if fighters[defender].stat[6] < fighters[defender].get_max_health(): fighters[defender].state = 3
+                        if fighters[defender].state != 5 and fighters[defender].stat[6] < fighters[defender].get_max_health(): fighters[defender].state = 3
                         message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
                     else:
                         message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
@@ -885,7 +887,7 @@ class OdysseeCommands(commands.Cog):
             if player.state == 0: player.state = 3
             player.stat[6] += 5 * lvl
 
-        # régénération de la mana
+        # Régénération de la mana
         if player.state != 3 and player.stat[7] < 5 + (lvl - 1):
             mana = 1 + (lvl // 2)
             for obj in player.inventory:
@@ -903,9 +905,17 @@ class OdysseeCommands(commands.Cog):
         # Blessé
         if player.state == 3 and player.stat[6] >= player.get_max_health():
             player.state = 0
+
+        # Transformé
+        if player.state == 5:
+            player.stat_sub(player.stat_modifier)
+            player.stat_modifier = [0 for _ in range(8)]
+            player.state = (3, 0)[player.stat[6] >= player.get_max_health()]
         
 
         await ctx.send(f"__{player.name}__ se repose.")
+
+        save_game()
 
 
     @commands.command(name="plante", help="Donne des informations sur la plante demandée (source : wikiphyto.org)", brief="Informations sur une plante")
@@ -1096,6 +1106,9 @@ class AdminCommands(commands.Cog):
                 await ctx.send(f"__{player.name}__ oublie le pouvoir : '{valeur}'.")
 
         elif capacite == "état":
+            if state == 5 or player.state == 5:
+                await send_error(ctx, "ce status ne peut pas être affecté manuellement à un joueur")
+                return
             valeur = valeur.lower()
             state = get_state_by_name(valeur)
             if state + 1:

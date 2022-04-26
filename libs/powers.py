@@ -4,14 +4,15 @@ import sqlite3
 # --- Constructor --- #
 
 class Power:
-    def __init__(self, name, description, enemy, power_id):
+    def __init__(self, name, description, enemy, power_id, mana_cost):
         self.name = name
         self.description = description
         self.enemy = enemy
         self.power_id = power_id
+        self.mana_cost = mana_cost
 
     def export(self):
-        return [self.name, self.description, self.enemy, self.power_id]
+        return [self.name, self.description, self.enemy, self.power_id, self.mana_cost]
 
 
 # --- Database gestion --- #
@@ -55,7 +56,7 @@ def get_default_power(species_name):
     c = table.cursor()
 
     database = c.execute(f"""
-        SELECT pouvoirs.nom, description, adversaire, pouvoirs.id FROM pouvoirs
+        SELECT pouvoirs.nom, description, adversaire, pouvoirs.id, cout_mana FROM pouvoirs
         JOIN especes ON especes.id = pouvoirs.espece
         WHERE especes.id = {species_id}
     """).fetchall()
@@ -71,7 +72,7 @@ def get_power_by_id(power_id):
     table = sqlite3.connect("BDD/odyssee_powers.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT nom, description, adversaire, id FROM pouvoirs WHERE id = {power_id}").fetchall()
+    database = c.execute(f"SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE id = {power_id}").fetchall()
     table.close()
 
     if database:
@@ -84,7 +85,7 @@ def get_power_by_name(power_name):
     table = sqlite3.connect("BDD/odyssee_powers.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT nom, description, adversaire, id FROM pouvoirs WHERE nom = \"{power_name}\"").fetchall()
+    database = c.execute(f"SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE nom = \"{power_name}\"").fetchall()
     table.close()
     
     if database:
@@ -116,6 +117,7 @@ def power_use(power_id):
         charge,
         antidote,
         chant_de_guerre,
+        loup_garou,
     )[power_id]
 
 
@@ -256,7 +258,6 @@ def vitesse(user, players, target=None):
 
 def charge(user, players, target=None):
     pts = user.stat[1] * 2
-    user.stat[7] += 1
 
     if target.stat[6] > pts:
         target.capacity_modify(6, -pts)
@@ -300,3 +301,11 @@ def chant_de_guerre(user, players, target=None):
             player.capacity_modify(1, pts)
             msg += f" - __{player.name}__ gagne {pts} points de Courage et de Force.\n"
     return msg
+
+
+def loup_garou(user, players, target=None):
+    pts = 10 * user.get_level()
+    user.stat_modifier = [pts // 2, pts, -pts, pts // 4, -pts, pts // 4, pts // 2, 0]
+    user.state = 5
+    user.stat_add(user.stat_modifier)
+    return f"__{user.name}__ se transforme en Loup-garou."

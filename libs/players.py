@@ -34,7 +34,7 @@ def get_capacities():
 
 # Player : contient les infos des joueurs (PnJ compris)
 class Player:
-    def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", inventory=None, note=None, power=None, state=0, abilities=None):
+    def __init__(self, identifier, name, species, avatar=None, stat=None, place="< inconnu >", stat_modifier=None, inventory=None, note=None, power=None, state=0, abilities=None):
         self.id = identifier
         self.name = name
         self.species = species
@@ -45,6 +45,9 @@ class Player:
         if stat: self.stat = stat
         else: self.stat = stat_gen(get_species(species)[2:])
         self.max_weight = 5 * (self.stat[1] + 1)
+
+        if stat_modifier: self.stat_modifier = stat_modifier
+        else: self.stat_modifier = [0 for _ in range(8)]
         
         if inventory: self.inventory = [Object(*i) for i in inventory]
         else: self.inventory = list()
@@ -63,7 +66,8 @@ class Player:
             self.abilities = []
 
     def export(self):
-        return [self.id, self.name, self.species, self.avatar, self.stat, self.place, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state, self.abilities]
+        if self.state == 3 and self.stat[6] >= self.get_max_health(): self.state = 0
+        return [self.id, self.name, self.species, self.avatar, self.stat, self.place, self.stat_modifier, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state, self.abilities]
 
     def isalive(self):
         return self.stat[6] > 0
