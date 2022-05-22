@@ -138,6 +138,116 @@ def phase_3(fighters, attacker, defender):
     return damage
 
 
+async def fight_main(player, target, arme, data_player, ctx):
+    # Vérification de l'arme du joueur
+    if arme:
+        player_weapon, check = weapon_check(player, target, arme)
+        if check == 1: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{arme}'"); return
+        elif check == 2: await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit"); return
+        elif check == 3: await send_error(ctx, f"__{player.name} n'a pas de projectile pour tirer"); return
+
+    # Si aucune arme n'a été précisée
+    elif target.place != player.place:
+            await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit")
+            return
+    else:
+        player_weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
+
+    # Arme de l'adversaire
+    target_can_fight, target_weapon = weapon_select(target)
+    if target_weapon.object_type != 4 and target.place != player.place: target_can_fight = False
+    if player.state == 6: target_can_fight = False
+
+    # Affichage des statistiques et des modificateurs
+    capacities = list(get_capacities()[:6])
+    capacities.insert(0, "Capacités")
+
+    max_lgth = len(capacities[0])
+
+    player_capacities = [player.name]
+    player_max_lgth = len(player.name)
+
+    target_capacities = [target.name]
+    target_max_lgth = len(target.name)
+
+    pml, tml = 0, 0
+    for i in range(len(capacities)):
+        pml = max(pml, len(str(player.stat[i])))
+        tml = max(tml, len(str(target.stat[i])))
+
+    for index in range(len(capacities)):
+        max_lgth = max(len(capacities[index]), max_lgth)
+
+        player_capacities.append(f"{player.stat[index]}{' ' * (pml - len(str(player.stat[index])))} [{('', '+')[player_weapon.stat[index] >= 0]}{player_weapon.stat[index]}]")
+        player_max_lgth = max(len(player_capacities[-1]), player_max_lgth)
+
+        target_capacities.append(f"{target.stat[index]}{' ' * (tml - len(str(target.stat[index])))} [{('', '+')[target_weapon.stat[index] >= 0]}{target_weapon.stat[index]}]")
+        target_max_lgth = max(len(target_capacities[-1]), target_max_lgth)
+
+    message = f"```\n"
+    
+    for index, name in enumerate(capacities):
+        message += f"{name.capitalize() + ' ' * (max_lgth - len(name))} | {player_capacities[index] + ' ' * (player_max_lgth - len(player_capacities[index]))} | {target_capacities[index] + ' ' * (target_max_lgth - len(target_capacities[index]))}\n"
+
+    message += "```\n"
+
+    player.stat_add(player_weapon.stat)
+    target.stat_add(target_weapon.stat)
+
+    # Qui commence
+    fighters, target_index = phase_1(player, target)
+
+    for attacker in range(2):
+        defender = (attacker + 1) % 2
+
+        turn = True
+        if attacker == target_index and not target_can_fight:
+            message += f"__{fighters[target_index].name}__ ne peut pas se battre.\n"
+            if player.state == 6: message += f"(car __{player.name}__ est invisible)"
+            turn = False
+
+        end = False
+        if turn:
+            message += f"__{fighters[attacker].name}__ attaque"
+            if attacker == target_index: message += f" avec {target_weapon.name}"
+            else: message += f" avec {player_weapon.name}"
+
+            if phase_2(fighters[attacker]):
+                message += " et touche sa cible.\n"
+
+                damage = phase_3(fighters, attacker, defender)
+                if damage:
+                    if fighters[defender].state != 5 and fighters[defender].stat[6] < fighters[defender].get_max_health(): fighters[defender].state = 3
+                    message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
+                else:
+                    message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
+
+                if not fighters[defender].isalive():
+                    loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
+                    
+                    if fighters[defender].stat[8]:
+                        loot += f" ❖ {fighters[defender].stat[8]} Drachme{('', 's')[fighters[defender].stat[8] > 1]}\n"
+                        fighters[attacker].stat[8] += fighters[defender].stat[8]
+                    
+                    for obj in fighters[defender].inventory:
+                        check = fighters[attacker].object_add(*fighters[attacker].have(obj.name), obj.quantity, obj.name)
+                        if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
+
+                    data_player.pop(fighters[defender].id)
+
+                    message += loot
+                    end = True
+            else:
+                message += f" et manque sa cible.\n"
+
+        if end: break
+
+    player.stat_sub(player_weapon.stat)
+    target.stat_sub(target_weapon.stat)
+
+    return message
+
+
 def weapon_select(player):
     # Si player n'est pas en état de se battre
     if player.state in (2, 4):

@@ -118,6 +118,7 @@ def power_use(power_id):
         antidote,
         chant_de_guerre,
         loup_garou,
+        invisibilite,
     )[power_id]
 
 
@@ -309,3 +310,9 @@ def loup_garou(user, players, target=None):
     user.state = 5
     user.stat_add(user.stat_modifier)
     return f"__{user.name}__ se transforme en Loup-garou."
+
+
+def invisibilite(user, players, target=None):
+    user.state = 6
+    return f"__{user.name}__ devient invisible."
+

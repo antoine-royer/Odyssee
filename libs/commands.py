@@ -512,7 +512,7 @@ class OdysseeCommands(commands.Cog):
                 await send_error(ctx, f"__{player.name}__ ne possède pas le pouvoir : '{nom}'")
                 return
 
-            if player.stat[7] <= power.mana_cost:
+            if player.stat[7] < power.mana_cost:
                 await ctx.send(f"__{player.name}__ tente d'utiliser {nom}, mais échoue.")
                 return
 
@@ -758,165 +758,14 @@ class OdysseeCommands(commands.Cog):
 
             await ctx.send(f"__{player.name}__ se prépare à combattre __{adversaire}__.")
             return
-
-        # Vérification de l'arme du joueur
-        if arme:
-            player_weapon, check = weapon_check(player, target, arme)
-            if check == 1: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{arme}'"); return
-            elif check == 2: await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit"); return
-            elif check == 3: await send_error(ctx, f"__{player.name} n'a pas de projectile pour tirer"); return
-
-        # Si aucune arme n'a été précisée
-        elif target.place != player.place:
-                await send_error(ctx, f"__{player.name}__ et __{target.name}__ ne sont pas au même endroit")
-                return
         else:
-            player_weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
+            if target.state == 6:
+                await ctx.send("__{player.name}__ ne peut pas attaquer __{target.name}__ car ce dernier est invisible.")
+                return
 
-        # Arme de l'adversaire
-        target_can_fight, target_weapon = weapon_select(target)
-        if target_weapon.object_type != 4 and target.place != player.place: target_can_fight = False
-
-        # Affichage des statistiques et des modificateurs
-        capacities = list(get_capacities()[:6])
-        capacities.insert(0, "Capacités")
-
-        max_lgth = len(capacities[0])
-
-        player_capacities = [player.name]
-        player_max_lgth = len(player.name)
-
-        target_capacities = [target.name]
-        target_max_lgth = len(target.name)
-
-        pml, tml = 0, 0
-        for i in range(len(capacities)):
-            pml = max(pml, len(str(player.stat[i])))
-            tml = max(tml, len(str(target.stat[i])))
-
-        for index in range(len(capacities)):
-            max_lgth = max(len(capacities[index]), max_lgth)
-
-            player_capacities.append(f"{player.stat[index]}{' ' * (pml - len(str(player.stat[index])))} [{('', '+')[player_weapon.stat[index] >= 0]}{player_weapon.stat[index]}]")
-            player_max_lgth = max(len(player_capacities[-1]), player_max_lgth)
-
-            target_capacities.append(f"{target.stat[index]}{' ' * (tml - len(str(target.stat[index])))} [{('', '+')[target_weapon.stat[index] >= 0]}{target_weapon.stat[index]}]")
-            target_max_lgth = max(len(target_capacities[-1]), target_max_lgth)
-
-        message = f"```\n"
-        
-        for index, name in enumerate(capacities):
-            message += f"{name.capitalize() + ' ' * (max_lgth - len(name))} | {player_capacities[index] + ' ' * (player_max_lgth - len(player_capacities[index]))} | {target_capacities[index] + ' ' * (target_max_lgth - len(target_capacities[index]))}\n"
-
-        message += "```\n"
-
-        player.stat_add(player_weapon.stat)
-        target.stat_add(target_weapon.stat)
-
-        # Qui commence
-        fighters, target_index = phase_1(player, target)
-
-        for attacker in range(2):
-            defender = (attacker + 1) % 2
-
-            turn = True
-            if attacker == target_index and not target_can_fight:
-                message += f"__{fighters[target_index].name}__ ne peut pas se battre.\n"
-                turn = False
-
-            end = False
-            if turn:
-                message += f"__{fighters[attacker].name}__ attaque"
-                if attacker == target_index: message += f" avec {target_weapon.name}"
-                else: message += f" avec {player_weapon.name}"
-
-                if phase_2(fighters[attacker]):
-                    message += " et touche sa cible.\n"
-
-                    damage = phase_3(fighters, attacker, defender)
-                    if damage:
-                        if fighters[defender].state != 5 and fighters[defender].stat[6] < fighters[defender].get_max_health(): fighters[defender].state = 3
-                        message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
-                    else:
-                        message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
-
-                    if not fighters[defender].isalive():
-                        loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
-                        
-                        if fighters[defender].stat[8]:
-                            loot += f" ❖ {fighters[defender].stat[8]} Drachme{('', 's')[fighters[defender].stat[8] > 1]}\n"
-                            fighters[attacker].stat[8] += fighters[defender].stat[8]
-                        
-                        for obj in fighters[defender].inventory:
-                            check = fighters[attacker].object_add(*fighters[attacker].have(obj.name), obj.quantity, obj.name)
-                            if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
-
-                        self.data_player.pop(fighters[defender].id)
-
-                        message += loot
-                        end = True
-                else:
-                    message += f" et manque sa cible.\n"
-
-            if end: break
-
+        message = await fight_main(player, target, arme, self.data_player, ctx)
         await ctx.send(message)
-
-        player.stat_sub(player_weapon.stat)
-        target.stat_sub(target_weapon.stat)
-
         save_game()
-
-
-    @commands.command(help="Vous permet de vous reposer lorsque vous dormez dehors.", brief="Dormir")
-    @commands.check(server_id)
-    async def dormir(self, ctx):
-        player = get_player_from_id(ctx.author.id)
-        if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
-
-        places = [player.place for player in self.data_player.values() if player.id < 0]
-        if player.place in places:
-            await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis potentiels à proximité")
-            return
-
-        lvl = player.get_level()
-        max_mana = lvl * 5
-        
-        # Régénération de la vie
-        if player.stat[6] < player.get_max_health():
-            if player.state == 0: player.state = 3
-            player.stat[6] += 5 * lvl
-
-        # Régénération de la mana
-        if player.state != 3 and player.stat[7] < 5 + (lvl - 1):
-            mana = 1 + (lvl // 2)
-            for obj in player.inventory:
-                mana += obj.stat[7]
-            player.stat[7] += mana
-
-        # Empoisonné
-        if player.state == 1:
-            player.stat[6] -= random(1, 12) * lvl
-
-        # Inconscient, endormi
-        if player.state in (2, 4):
-            player.state = 0
-        
-        # Blessé
-        if player.state == 3 and player.stat[6] >= player.get_max_health():
-            player.state = 0
-
-        # Transformé
-        if player.state == 5:
-            player.stat_sub(player.stat_modifier)
-            player.stat_modifier = [0 for _ in range(8)]
-            player.state = (3, 0)[player.stat[6] >= player.get_max_health()]
-        
-
-        await ctx.send(f"__{player.name}__ se repose.")
-
-        save_game()
-
 
     @commands.command(name="plante", help="Donne des informations sur la plante demandée (source : wikiphyto.org)", brief="Informations sur une plante")
     async def plante(self, ctx, nom: str):
@@ -1134,7 +983,6 @@ class AdminCommands(commands.Cog):
                 else:
                     await ctx.send(f"__{player.name}__ a perdu {nombre} point{('', 's')[nombre > 1]} sur la compétence : '{valeur}'.")
 
-        
         save_game()
 
     @commands.command(help="Permet de modifier les statistiques d'un objet possédé par un joueur.", brief="Permet de modifier les caractéristique d'une arme")
@@ -1283,127 +1131,72 @@ class AdminCommands(commands.Cog):
         if pnj.id > 0 or pnj.state in (2, 4): await send_error(ctx, f"__{pnj.name}__ n'est pas un PnJ ou n'est pas en état de se battre") ; return
 
         target = get_id_from_name(adversaire)
+
         if not target: await send_error(ctx, f"{adversaire} n'est pas un joueur enregistré") ; return
         target = self.data_player[target]
 
-        # Arme du joueur
-        if arme:
-            pnj_weapon, check = weapon_check(pnj, target, arme)
-            if check == 1: await send_error(ctx, f"__{pnj.name}__ ne possède pas l'objet : '{arme}'"); return
-            elif check == 2: await send_error(ctx, f"__{pnj.name}__ et __{target.name}__ ne sont pas au même endroit"); return
-            elif check == 3: await send_error(ctx, f"__{pnj.name} n'a pas de projectile pour tirer"); return
+        if target.state == 6:
+            await ctx.send(f"__{pnj.name}__ ne peut pas attaquer : __{target.name}__ est invisible.")
+            return
 
-        else:
-            if target.place != pnj.place:
-                await send_error(ctx, f"__{pnj.name}__ et __{target.name}__ ne sont pas au même endroit")
-                return
-        
-        if not pnj_weapon: pnj_weapon = Object("ses mains", "ses mains", [int(i == 8) for i in range(9)], -1, -1)
-
-        # Arme de l'adversaire
-        target_can_fight, target_weapon = weapon_select(target)
-        if target_weapon.object_type != 4 and target.place != pnj.place: target_can_fight = False
-
-
-        pnj.stat_add(pnj_weapon.stat)
-        target.stat_add(target_weapon.stat)
-
-        message = ""
-
-        fighters, target_index = phase_1(pnj, target)
-
-        for attacker in range(2):
-            defender = (attacker + 1) % 2
-
-            turn = True
-            if attacker == target_index and not target_can_fight:
-                message += f"__{fighters[target_index].name}__ ne peut pas se battre.\n"
-                turn = False
-
-            end = False
-            if turn:
-                message += f"__{fighters[attacker].name}__ attaque"
-                if attacker == target_index: message += f" avec {target_weapon.name}"
-                else: message += f" avec {pnj_weapon.name}"
-
-                if phase_2(fighters[attacker]):
-                    message += " et touche sa cible.\n"
-
-                    damage = phase_3(fighters, attacker, defender)
-                    
-                    if damage:
-                        if fighters[defender].stat[6] < 100 + (fighters[defender].get_level() - 1) * 25: fighters[defender].state = 3
-                        message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
-                    
-                    else:
-                        message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
-
-
-                    if not fighters[defender].isalive():
-                        loot = f"__{fighters[defender].name}__ est mort, __{fighters[attacker].name}__ fouille le cadavre et trouve :\n"
-                        
-                        if fighters[defender].stat[8]:
-                            loot += f" ❖ {fighters[defender].stat[8]} Drachme{('', 's')[fighters[defender].stat[8] > 1]}\n"
-                            fighters[attacker].stat[8] += fighters[defender].stat[8]
-                        
-                        for obj in fighters[defender].inventory:
-                            check = fighters[attacker].object_add(*fighters[attacker].have(obj.name), obj.quantity, obj.name)
-                            if check: loot += f" ❖ {obj.name}{('', f' ({obj.quantity})')[obj.quantity > 1]}\n"
-
-                        self.data_player.pop(fighters[defender].id)
-
-                        message += loot
-                        end = True
-                else:
-                    message += f" et manque sa cible.\n"
-
-            if end: break
-
+        message = await fight_main(pnj, target, arme, self.data_player, ctx)       
         await ctx.send(message)
-
-        pnj.stat_sub(pnj_weapon.stat)
-        target.stat_sub(target_weapon.stat)
-
         save_game()
 
 
-    @commands.command(help="Fait dormir les PnJ", brief="Fait dormir les PnJ")
+    @commands.command(help="Fait dormir les joueurs (PnJ compris).", brief="Fait dormir les joueurs.")
     @commands.check(is_admin)
-    async def pnj_dormir(self, ctx):
-        npc_names = []
-        for npc_id in self.data_player:
-            if npc_id > 0: continue
-            npc = get_player_from_id(npc_id)
-            npc_names.append(npc.name)
-
-            lvl = npc.get_level()
-            max_mana = lvl * 5
+    async def dormir(self, ctx):
+        players_names = []
+        for player in self.data_player.values():
+            places = [player.place for player in self.data_player.values() if player.id < 0]
+            if player.place in places:
+                await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis potentiels à proximité")
             
-            # Régénération de la vie
-            if npc.stat[6] < 100 + (lvl - 1) * 25:
-                if npc.state == 0: npc.state = 3
-                npc.stat[6] += 5 * lvl
+            else:
+                players_names.append(player.name)
 
-            # régénération de la mana
-            if npc.state != 3 and npc.stat[7] < 5 + (lvl - 1):
-                npc.stat[7] += 1 + (lvl // 2)
+                lvl = player.get_level()
+                max_mana = lvl * 5
+                
+                # Régénération de la vie
+                if player.stat[6] < player.get_max_health():
+                    if player.state == 0: player.state = 3
+                    player.stat[6] += 5 * lvl
 
-            # Empoisonné
-            if npc.state == 1:
-                npc.stat[6] -= random(1, 12) * lvl
+                # Régénération de la mana
+                if player.state != 3 and player.stat[7] < 5 + (lvl - 1):
+                    mana = 1 + (lvl // 2)
+                    for obj in player.inventory:
+                        mana += obj.stat[7]
+                    player.stat[7] += mana
 
-            # Inconscient, endormi
-            if npc.state in (2, 4):
-                npc.state = 0
+                # Empoisonné
+                if player.state == 1:
+                    player.stat[6] -= random(1, 12) * lvl
+
+                # Inconscient, endormi
+                if player.state in (2, 4):
+                    player.state = 0
+                
+                # Blessé
+                if player.state == 3 and player.stat[6] >= player.get_max_health():
+                    player.state = 0
+
+                # Transformé
+                if player.state == 5:
+                    player.stat_sub(player.stat_modifier)
+                    player.stat_modifier = [0 for _ in range(8)]
+                    player.state = (3, 0)[player.stat[6] >= player.get_max_health()]
+
+                # Invisible
+                elif player.state == 6:
+                    player.state = (3, 0)[player.stat[6] >= player.get_max_health()]
             
-            # Blessé
-            if npc.state == 3 and npc.stat[6] >= 100 + (lvl - 1) * 25:
-                npc.state = 0
-            
-        if len(npc_names) == 1:
-            await ctx.send(f"__{npc_names[0]}__ a dormi.")
+        if len(players_names) == 1:
+            await ctx.send(f"__{players_names[0]}__ a dormi.")
         elif len(npc_names) > 1:
-            await ctx.send(f"__{', '.join(npc_names)}__ ont dormi.")
+            await ctx.send(f"__{', '.join(players_names)}__ ont dormi.")
         
         save_game()
 
