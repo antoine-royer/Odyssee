@@ -955,8 +955,8 @@ class AdminCommands(commands.Cog):
                 await ctx.send(f"__{player.name}__ oublie le pouvoir : '{valeur}'.")
 
         elif capacite == "état":
-            if state == 5 or player.state == 5:
-                await send_error(ctx, "ce status ne peut pas être affecté manuellement à un joueur")
+            if state in (5, 6) or player.state in (5, 6):
+                await send_error(ctx, "ce status ne peut pas être affecté manuellement à un joueur ou le joueur a déjà un status spécial")
                 return
             valeur = valeur.lower()
             state = get_state_by_name(valeur)
@@ -1094,11 +1094,10 @@ class AdminCommands(commands.Cog):
         save_game()
 
 
-    @commands.command(help="Renvoie le fichier de sauvegarde", brief="Obtenir la sauvegarde")
+    @commands.command(help="Sauvegarde la partie dans un fichier séparé et renvoie une copie du fichier.", brief="Sauvegarde la partie.")
     @commands.check(is_admin)
     async def sauvegarde(self, ctx, nom: str=""):
         if not nom: nom = str(ctx.guild.id)
-        #self.guild_id = ctx.guild.id
         save_game(nom)
 
         with open(f"saves/save.json", "r") as file:
@@ -1149,12 +1148,12 @@ class AdminCommands(commands.Cog):
     async def dormir(self, ctx):
         players_names = []
         for player in self.data_player.values():
-            places = [player.place for player in self.data_player.values() if player.id < 0]
+            places = [i.place for i in self.data_player.values() if i.id * player.id < 0]
             if player.place in places:
                 await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis potentiels à proximité")
             
             else:
-                players_names.append(player.name)
+                players_names.append(f"__{player.name}__")
 
                 lvl = player.get_level()
                 max_mana = lvl * 5
@@ -1195,8 +1194,8 @@ class AdminCommands(commands.Cog):
             
         if len(players_names) == 1:
             await ctx.send(f"__{players_names[0]}__ a dormi.")
-        elif len(npc_names) > 1:
-            await ctx.send(f"__{', '.join(players_names)}__ ont dormi.")
+        elif len(players_names) > 1:
+            await ctx.send(f"{', '.join(players_names[:-1])} et {players_names[-1]} ont dormi.")
         
         save_game()
 
