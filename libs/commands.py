@@ -44,13 +44,13 @@ def get_id_from_name(player_name):
             return player_id
     return None
 
+
 def get_player_from_name(player_name):
     player_name = player_name.lower()
     for player_id in data_player:
         if data_player[player_id].name.lower() == player_name:
             return data_player[player_id]
     return None
-
 
 
 async def awareness(ctx):
@@ -60,8 +60,10 @@ async def awareness(ctx):
 
     player = data_player[ctx.author.id]
     if player.state == 2:
-        await ctx.send(f"__{player.name}__ est inconscient(e).")
+        await send_error(ctx, f"__{player.name}__ est inconscient(e).")
         return False
+    elif player.state == 4:
+        await send_error(ctx, f"__{player.name}__ est endormi(e).")
     return True
 
 
@@ -130,7 +132,6 @@ class OdysseeCommands(commands.Cog):
             
             for embed in make_embed(fields, "Rubique d'aide", f"Entrez : `{self.PREFIX}aide <commande>` pour plus d'informations."):
                 await ctx.send(embed=embed)
-
 
     @commands.command(help="Votre espèce est à préciser impérativement. Si aucun pseudonyme n'est précisé, Odyssée prendra votre nom d'utilisateur.", brief="Créer un nouveau joueur")
     @commands.check(server_id)
@@ -520,8 +521,11 @@ class OdysseeCommands(commands.Cog):
                 await send_error(ctx, f"le sort '{nom}' nécessite une cible")
                 return
 
+            player.stat_sub(player.stat_modifier)
             player.stat[7] -= power.mana_cost
             await ctx.send(f"__{player.name}__ utilise {nom} :\n" + power_use(power.power_id)(player, self.data_player, adversaire))
+            player.stat_add(player.stat_modifier)
+
 
         else:   
             fields = []
@@ -684,6 +688,21 @@ class OdysseeCommands(commands.Cog):
 
         save_game()
 
+    @commands.command(help="Vous permet de vous reposer lorsque vous dormez dehors.", brief="Dormir")
+    @commands.check(server_id)
+    async def dormir(self, ctx):
+        player = get_player_from_id(ctx.author.id)
+        if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
+
+        places = [player.place for player in self.data_player.values() if player.id < 0]
+        if player.place in places:
+            await send_error(ctx, f"__{player.name}__ ne peut pas dormir : il y a des ennemis potentiels à proximité")
+            return
+
+        player.sleep()
+
+        await ctx.send(f"__{player.name}__ se repose.")
+        save_game()
 
     @commands.command(help=f"Calculer la vitesse nécessaire pour parcourir une certaine distance.\n\n__Moyens de transport__ : {get_all_travel_mean()}\n\n__Météo__ : {get_all_weather()}\n\n__Terrains__ : {get_all_landtype()}", brief="Calculer un temps de trajet")
     @commands.check(server_id)
@@ -955,13 +974,21 @@ class AdminCommands(commands.Cog):
                 await ctx.send(f"__{player.name}__ oublie le pouvoir : '{valeur}'.")
 
         elif capacite == "état":
-            if state in (5, 6) or player.state in (5, 6):
-                await send_error(ctx, "ce status ne peut pas être affecté manuellement à un joueur ou le joueur a déjà un status spécial")
-                return
             valeur = valeur.lower()
             state = get_state_by_name(valeur)
+
+            if state in (5, 6):
+                await send_error(ctx, "ce status ne peut pas être affecté manuellement à un joueur")
+                return
+
             if state + 1:
-                player.state = state
+                if player.state == 5:
+                    player.stat_sub(player.stat_modifier)
+                    player.stat_modifier = [0 for _ in range(8)]
+                    player.state = state
+                elif player.state == 6:
+                    player.state = state
+                    player.state = state
                 await ctx.send(f"__{player.name}__ devient {valeur}.")
             else:
                 await send_error(ctx, f"{valeur} n'est pas un état connu")
@@ -1022,7 +1049,6 @@ class AdminCommands(commands.Cog):
                 await send_error(ctx, f"'{capacite}' n'est pas une capacité connue")
 
         save_game()
-
 
     @commands.command(help="Supprime la totalité de la sauvegarde du jeu en cours.", brief="Supprime la sauvegarde")
     @commands.check(is_admin)
@@ -1145,7 +1171,7 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Fait dormir les joueurs (PnJ compris).", brief="Fait dormir les joueurs.")
     @commands.check(is_admin)
-    async def dormir(self, ctx):
+    async def nuit(self, ctx):
         players_names = []
         for player in self.data_player.values():
             places = [i.place for i in self.data_player.values() if i.id * player.id < 0]
@@ -1154,48 +1180,12 @@ class AdminCommands(commands.Cog):
             
             else:
                 players_names.append(f"__{player.name}__")
-
-                lvl = player.get_level()
-                max_mana = lvl * 5
+                player.sleep()
                 
-                # Régénération de la vie
-                if player.stat[6] < player.get_max_health():
-                    if player.state == 0: player.state = 3
-                    player.stat[6] += 5 * lvl
-
-                # Régénération de la mana
-                if player.state != 3 and player.stat[7] < 5 + (lvl - 1):
-                    mana = 1 + (lvl // 2)
-                    for obj in player.inventory:
-                        mana += obj.stat[7]
-                    player.stat[7] += mana
-
-                # Empoisonné
-                if player.state == 1:
-                    player.stat[6] -= random(1, 12) * lvl
-
-                # Inconscient, endormi
-                if player.state in (2, 4):
-                    player.state = 0
-                
-                # Blessé
-                if player.state == 3 and player.stat[6] >= player.get_max_health():
-                    player.state = 0
-
-                # Transformé
-                if player.state == 5:
-                    player.stat_sub(player.stat_modifier)
-                    player.stat_modifier = [0 for _ in range(8)]
-                    player.state = (3, 0)[player.stat[6] >= player.get_max_health()]
-
-                # Invisible
-                elif player.state == 6:
-                    player.state = (3, 0)[player.stat[6] >= player.get_max_health()]
-            
         if len(players_names) == 1:
-            await ctx.send(f"__{players_names[0]}__ a dormi.")
+            await ctx.send(f"__{players_names[0]}__ s'est reposé.")
         elif len(players_names) > 1:
-            await ctx.send(f"{', '.join(players_names[:-1])} et {players_names[-1]} ont dormi.")
+            await ctx.send(f"{', '.join(players_names[:-1])} et {players_names[-1]} se sont reposés.")
         
         save_game()
 

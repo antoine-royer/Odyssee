@@ -124,7 +124,7 @@ def power_use(power_id):
 
 def nyctalopie(user, players, target=None):
     pts = 5 * user.get_level()
-    user.stat[2] += pts    
+    user.stat_modifier[2] += pts    
     return f"__{user.name}__ a une vision améliorée et gagne {pts} points d'Habileté."
 
 
@@ -240,7 +240,7 @@ def eclair(user, players, target=None):
 
 def protection(user, players, target=None):
     pts = 10 * user.get_level()
-    user.capacity_modify(4, pts)
+    user.stat_modifier[5] += pts
     return f"__{user.name}__ gagne {pts} points de Défense."
 
 
@@ -253,7 +253,7 @@ def fatigue(user, players, target=None):
 
 def vitesse(user, players, target=None):
     pts = 15 * user.get_level()
-    user.capacity_modify(3, pts)
+    user.stat_modifier[3] += pts
     return f"__{user.name}__ gagne {pts} points de Rapidité."
 
 
@@ -306,9 +306,10 @@ def chant_de_guerre(user, players, target=None):
 
 def loup_garou(user, players, target=None):
     pts = 10 * user.get_level()
-    user.stat_modifier = [pts // 2, pts, -pts, pts // 4, -pts, pts // 4, pts // 2, 0]
+    modifier = [pts // 2, pts, -pts, pts // 4, -pts, pts // 4, pts // 2, 0]
+    for i in range(8):
+        user.stat_modifier[i] += modifier[i]
     user.state = 5
-    user.stat_add(user.stat_modifier)
     return f"__{user.name}__ se transforme en Loup-garou."
 
 

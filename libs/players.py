@@ -271,6 +271,41 @@ class Player:
 
         return -1
 
+    def sleep(self):
+        lvl = self.get_level()
+        max_mana = lvl * 5
+
+        self.stat_sub(self.stat_modifier)
+        self.stat_modifier = [0 for _ in range(8)]
+        
+        # Régénération de la vie
+        if self.stat[6] < self.get_max_health():
+            if self.state == 0: self.state = 3
+            self.stat[6] += 5 * lvl
+
+        # Régénération de la mana
+        if self.state != 3 and self.stat[7] < 5 + (lvl - 1):
+            mana = 1 + (lvl // 2)
+            for obj in self.inventory:
+                mana += obj.stat[7]
+            self.stat[7] += mana
+
+        # Empoisonné
+        if self.state == 1:
+            self.stat[6] -= random(1, 12) * lvl
+
+        # Inconscient, endormi
+        if self.state in (2, 4):
+            self.state = 0
+        
+        # Blessé
+        if self.state == 3 and self.stat[6] >= self.get_max_health():
+            self.state = 0
+
+        # Transformé | Invisible
+        if self.state in (5, 6):
+            self.state = (3, 0)[self.stat[6] >= self.get_max_health()]
+
 
 
 
