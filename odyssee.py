@@ -25,7 +25,7 @@ odyssee = commands.Bot(command_prefix=config["PREFIX"], strip_after_prefix=True)
 save = load_save()
 
 for cmnd_module in (OdysseeCommands, AdminCommands):
-    odyssee.add_cog(cmnd_module(config, save))
+    odyssee.add_cog(cmnd_module(config, save, odyssee))
 
 
 @odyssee.event

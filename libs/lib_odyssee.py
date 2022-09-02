@@ -39,6 +39,7 @@ def load_save(save_name=""):
             data_player, data_kick, guild_id = data["players"], data["kicks"], data["guild_id"]
 
         data_player = {player[0]: Player(*player) for player in data_player}
+
         print("... partie chargée")
         return data_player, data_kick, guild_id
     
@@ -118,8 +119,8 @@ def phase_1(player, target):
         return (target, player), 0
 
 
-def phase_2(fighter):
-    return (fighter.capacity_roll(2) >= 2) or (fighter.capacity_roll(1) == 3)
+def phase_2(fighter, defender):
+    return (fighter.stat[2] - defender.stat[2] > 20 * defender.get_level()) or (fighter.capacity_roll(2) >= 2) or (fighter.capacity_roll(1) == 3)
 
 
 def phase_3(fighters, attacker, defender):
@@ -212,7 +213,7 @@ async def fight_main(player, target, arme, data_player, ctx):
             if attacker == target_index: message += f" avec {target_weapon.name}"
             else: message += f" avec {player_weapon.name}"
 
-            if phase_2(fighters[attacker]):
+            if phase_2(fighters[attacker], fighters[defender]):
                 message += " et touche sa cible.\n"
 
                 damage = phase_3(fighters, attacker, defender)

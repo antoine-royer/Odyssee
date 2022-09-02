@@ -91,7 +91,7 @@ async def is_admin(ctx):
 
 
 class OdysseeCommands(commands.Cog):
-    def __init__(self, config, savefile):
+    def __init__(self, config, savefile, bot):
         global data_player, data_kick, guild_id
         self.data_player, self.data_kick, guild_id = savefile
         self.PREFIX = config["PREFIX"]
@@ -165,13 +165,20 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Permet de changer son pseudo dans le jeu. Le pseudo utilisé avec Odyssée n'a aucun rapport avec celui du serveur Discord.", brief="Changer de pseudo")
     @commands.check(server_id)
-    async def pseudo(self, ctx, nom: str):
+    async def pseudo(self, ctx, nom: str=None):
         player = get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        if not get_player_from_name(nom):
+        if not nom:
+            if ctx.author.nick: nom = ctx.author.nick
+            else: nom = ctx.author.name
             await ctx.send(f"__{player.name}__ s'appelle désormais : {nom}")
             player.name = nom
+        
+        elif not get_player_from_name(nom):
+            await ctx.send(f"__{player.name}__ s'appelle désormais : {nom}")
+            player.name = nom
+        
         else:
             await send_error(ctx, "ce pseudo est déjà pris")
 
@@ -550,7 +557,7 @@ class OdysseeCommands(commands.Cog):
         nom = nom.capitalize()
 
         if check == 0:
-            await send_error(ctx, f"le pouvoir '{nom} n'existe pas")
+            await send_error(ctx, f"le pouvoir '{nom}' n'existe pas")
         elif check == 1:
             await send_error(ctx, f"__{player.name}__ a déjà le pouvoir : '{nom}' ou vous avez trop de pouvoirs")
         else:
@@ -823,16 +830,15 @@ class OdysseeCommands(commands.Cog):
         await ctx.send(embed=embed)
 
 
-
-
 class AdminCommands(commands.Cog):
-    def __init__(self, config, savefile):
+    def __init__(self, config, savefile, bot):
         global data_admin
         self.data_player, self.data_kick = data_player, data_kick
         
         self.PREFIX = config["PREFIX"]
         data_admin = config["ADMIN"]
 
+        self.bot = bot
 
     @commands.command(help="Affiche la documentation sur les fonctions d'administration.", brief="Afficher ce panneau")
     @commands.check(is_admin)
@@ -895,13 +901,12 @@ class AdminCommands(commands.Cog):
         if player_id:
             self.data_player.pop(player_id)
             await ctx.send(f"Le joueur : __{nom}__ a été supprimé.")
-
             save_game()
         else:
             await send_error(ctx, f"le joueur : '{nom}' n'existe pas")
 
 
-    @commands.command(help="Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités et statistiques, l'inventaire, le lieu, les états, les pouvoirs et les compétences.", brief="Modifier un joueur")
+    @commands.command(help=f"Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités ({', '.join(get_capacities())}) et statistiques, l'inventaire, le lieu, les états, les pouvoirs et les compétences.", brief="Modifier un joueur")
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
         player_id = get_id_from_name(nom)
@@ -987,7 +992,6 @@ class AdminCommands(commands.Cog):
                     player.stat_modifier = [0 for _ in range(8)]
                     player.state = state
                 elif player.state == 6:
-                    player.state = state
                     player.state = state
                 await ctx.send(f"__{player.name}__ devient {valeur}.")
             else:
@@ -1107,8 +1111,10 @@ class AdminCommands(commands.Cog):
             return
 
         self.data_player.clear()
+        guild = self.bot.get_guild(guild_id)
         for player in data_player:
             self.data_player.update({player[0]: Player(*player)})
+            await self.data_player[player[0]].get_avatar(guild)
 
         self.data_kick.clear()
         for i in data_kick:

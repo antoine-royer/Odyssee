@@ -8,6 +8,7 @@ player_displayed = False
 
 def display_player(event):
     global player_displayed
+    print(player_displayed)
 
     def get_all():
         global player_displayed
@@ -17,34 +18,40 @@ def display_player(event):
         player_displayed = False
         frame.destroy()
 
-    if player_displayed: return 
-    player_displayed = True
-    index = player_list.curselection()[0]
-    player = data["players"][index]
+    def delete_all():
+        global player_displayed
+        player_displayed = False
+        frame.destroy()
 
-    frame = LabelFrame(window, text=f"{player[1]} — {player[2]}")
-    frame.pack(fill="both", expand="yes", padx=2, pady=2)
 
-    capacity = LabelFrame(frame, text="Capacités", relief="sunken")
-    capacity.pack(fill="both", expand="yes", padx=2, pady=2, side="left")
+    if not player_displayed:
+        player_displayed = True
+        index = player_list.curselection()[0]
+        player = data["players"][index]
 
-    misc = LabelFrame(frame, text="Divers", relief="sunken")
-    misc.pack(fill="both", expand="yes", padx=2, pady=2)
+        frame = LabelFrame(window, text=f"{player[1]} — {player[2]}")
+        frame.pack(fill="both", expand="yes", padx=2, pady=2)
 
-    capacities = [IntVar() for _ in range(5)]
-    for i in range(5):
-        capacities[i].set(player[4][i])
-        Label(capacity, text=("Courage", "Force", "Habileté", "Rapidité", "Intelligence")[i]).pack()
-        Spinbox(capacity, textvariable=capacities[i], from_=0, to=100000).pack()
+        capacity = LabelFrame(frame, text="Capacités", relief="sunken")
+        capacity.pack(fill="both", expand="yes", padx=2, pady=2, side="left")
 
-    miscellaneous = [IntVar() for _ in range(3)]
-    for i in range(3):
-        miscellaneous[i].set(player[4][6 + i])
-        Label(misc, text=("Vie", "Mana", "Argent")[i]).pack()
-        Spinbox(misc, textvariable=miscellaneous[i], from_=0, to=100000).pack()
+        misc = LabelFrame(frame, text="Divers", relief="sunken")
+        misc.pack(fill="both", expand="yes", padx=2, pady=2)
 
-    button = Button(frame, text="Valider", command=get_all).pack()
+        capacities = [IntVar() for _ in range(5)]
+        for i in range(5):
+            capacities[i].set(player[4][i])
+            Label(capacity, text=("Courage", "Force", "Habileté", "Rapidité", "Intelligence")[i]).pack()
+            Spinbox(capacity, textvariable=capacities[i], from_=0, to=100000).pack()
 
+        miscellaneous = [IntVar() for _ in range(3)]
+        for i in range(3):
+            miscellaneous[i].set(player[4][6 + i])
+            Label(misc, text=("Vie", "Mana", "Argent")[i]).pack()
+            Spinbox(misc, textvariable=miscellaneous[i], from_=0, to=100000).pack()
+
+        validate = Button(frame, text="Valider", command=get_all).pack()
+        annulate = Button(frame, text="Retour", command=delete_all).pack()
     
 
 # Get the savefile
@@ -57,7 +64,7 @@ with open(filename, "r") as file:
 
 # Display players
 window = Tk()
-window.title("Save Editor")
+window.title("Éditeur de sauvegarde")
 
 player_list = Listbox(window)
 for index, player in enumerate(data["players"]):

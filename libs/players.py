@@ -25,7 +25,7 @@ def stat_gen(factor, level=1, enemy=False):
 
 
 # roll_die : simule un lancer de dé
-def roll_die(faces = 20, nb = 1):
+def roll_die(faces=20, nb=1):
     return randint(nb, nb * faces)
 
 
@@ -69,16 +69,20 @@ class Player:
         if self.state == 3 and self.stat[6] >= self.get_max_health(): self.state = 0
         return [self.id, self.name, self.species, self.avatar, self.stat, self.place, self.stat_modifier, [i.export() for i in self.inventory], self.note, [i.export() for i in self.power], self.state, self.abilities]
 
+    async def get_avatar(self, guild):
+        player = await guild.fetch_member(self.id)
+        self.avatar = str(player.avatar_url)
+
     def isalive(self):
         return self.stat[6] > 0
 
+    def get_max_weight(self):
+        return 2 * self.stat[1]
+        
     def isoverweight(self):
         max_weight = self.get_max_weight()
         if self.stat[9] > max_weight: return self.stat[9] - max_weight
         else: return 0
-
-    def get_max_weight(self):
-        return 2 * self.stat[1]
 
     def get_max_health(self):
         return (100 + (self.get_level() - 1) * 25)
@@ -94,7 +98,7 @@ class Player:
         if self.state == 3 or overweight: malus = (self.get_max_health() - self.stat[6]) // 10 + (overweight // 10)
         else: malus = 0
         
-        point = (roll_die() + self.stat[capacity_index] - malus) / (40 * self.get_level())
+        point = (randint(1, 20) + self.stat[capacity_index] - malus) / (40 * self.get_level())
 
         if point >= 0.75:
             return 3 # succès critique
@@ -265,7 +269,7 @@ class Player:
             return 2 # le joueur perd un point
 
     def have_abilities(self, ab_name):
-        an_name = ab_name.lower()
+        ab_name = ab_name.lower()
         for index, ab in enumerate(self.abilities):
             if ab_name == ab[0].lower(): return index
 
