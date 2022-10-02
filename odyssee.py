@@ -20,7 +20,7 @@ if not "saves" in os.listdir():
 with open("config.json", "r") as file:
     config = json.load(file)
 
-odyssee = commands.Bot(command_prefix=config["PREFIX"], strip_after_prefix=True)
+odyssee = commands.Bot(command_prefix=commands.when_mentioned_or(config["PREFIX"]), strip_after_prefix=True)
 
 save = load_save()
 

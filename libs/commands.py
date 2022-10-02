@@ -154,11 +154,12 @@ class OdysseeCommands(commands.Cog):
 
     @commands.command(help="Vous permet de mettre à jour votre avatar dans les fichiers du bot si vous en changez.", brief="Mettre à jour son avatar")
     @commands.check(server_id)
-    async def avatar(self, ctx):
+    async def avatar(self, ctx, url: str=None):
         player = get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        player.avatar = str(ctx.author.avatar_url)
+        if not url: player.avatar = str(ctx.author.avatar_url)
+        else: player.avatar = url
         await ctx.send(f"L'avatar de __{player.name}__ a été mis à jour.")
         save_game()
 
@@ -1114,7 +1115,6 @@ class AdminCommands(commands.Cog):
         guild = self.bot.get_guild(guild_id)
         for player in data_player:
             self.data_player.update({player[0]: Player(*player)})
-            await self.data_player[player[0]].get_avatar(guild)
 
         self.data_kick.clear()
         for i in data_kick:
