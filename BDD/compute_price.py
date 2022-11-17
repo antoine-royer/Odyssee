@@ -20,8 +20,8 @@ def compute():
 			if price == 0: price = 1
 			elif price < 0: price = abs(price)
 		
-		# si l'objet n'est ni un moyen de transport, ni un outil, on met à jour
-		if not obj[1] in (6, 7):
+		# si l'objet n'est ni un moyen de transport, ni un outil, ni une matière première on met à jour
+		if not obj[1] in (6, 7, 8):
 			c.execute(f"""
 				UPDATE objets SET argent = {price}
 				WHERE nom = \"{obj[2]}\"
