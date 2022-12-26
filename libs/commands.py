@@ -437,9 +437,9 @@ class OdysseeCommands(commands.Cog):
         save_game()
 
 
-    @commands.command(name="dé", help="Lancer un dé. Le premier paramètre est le nombre de faces du dé (> 3), le second est le nombre de dés lancés. Les deux paramètres sont optionnels, par défault, un dé à 20 faces est lancé.", brief="Lancer un dé")
+    @commands.command(name="dé", help="Lancer un dé. Le premier paramètre est le nombre de dés lancés, le second est le nombre de faces du ou des dés lancés (> 3). Les deux paramètres sont optionnels, par défault, un dé à 20 faces est lancé.", brief="Lancer un dé")
     @commands.check(server_id)
-    async def de(self, ctx, faces: int=20, nombre: int=1):
+    async def de(self, ctx, nombre: int=1, faces: int=20):
         player = get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
@@ -687,7 +687,7 @@ class OdysseeCommands(commands.Cog):
         check = player.object_del(check, obj, nombre)
 
         if check:
-            cost = (3 * nombre * obj.stat[8]) // 4 + randint(0, 3) * player.capacity_roll(4) 
+            cost = nombre * (3 * obj.stat[8] // 4) 
             nombre = ("", f" ({nombre})")[nombre > 1]
             player.stat[8] += cost
             await ctx.send(f"__{player.name}__ a vendu l'objet : '{nom}{nombre}' pour {cost} Drachmes.")
@@ -1244,3 +1244,51 @@ class AdminCommands(commands.Cog):
                 await ctx.send(embed=embed)
 
         save_game()
+
+    @commands.command(help=f"Permet à un PnJ de un lancer de dé dans dans une capacité ou une compétence.\n\n__Capacités connues :__ {', '.join(get_capacities()[: 6])}", brief="Effectuer un lancer dans une capacité pour un PnJ")
+    @commands.check(server_id)
+    @commands.check(awareness)
+    async def pnj_lancer(self, ctx, joueur: str, capacite: str):
+        pnj = get_id_from_name(joueur)
+        if not pnj: await send_error(ctx, f"{joueur} n'est pas un joueur enregistré"); return
+        pnj = self.data_player[pnj]
+        if pnj.id > 0 or pnj.state in (2, 4): await send_error(ctx, f"__{pnj.name}__ n'est pas un PnJ ou n'est pas en état d'effectuer un lancer'") ; return
+
+        capacities = [i.capitalize() for i in get_capacities()[: 6]]
+        capacite = capacite.capitalize()
+
+        if not capacite in capacities:
+            capacite = capacite.lower()
+            check = pnj.have_abilities(capacite)
+            die_score = randint(1, 20)
+
+            if check != -1: die_score += pnj.abilities[check][1] // 5
+
+            if die_score > 15:
+                pnj.add_abilities(capacite, check)
+                if check == -1:
+                    await ctx.send(f"__{pnj.name}__ a gagné la compétence : '{capacite}'.")
+                else:
+                    await ctx.send(f"__{pnj.name}__ a fait un succès critique sur son lancer de compétence : '{capacite}'")
+
+            elif check == -1:
+                await ctx.send(f"__{pnj.name}__ n'a pas réussi à apprendre la compétence : '{capacite}'.")
+
+            elif die_score >= 10 :
+                await ctx.send(f"__{pnj.name}__ a fait un succès sur son lancer de compétence : '{capacite}'.")
+
+            elif die_score > 5:
+                await ctx.send(f"__{pnj.name}__ a fait un échec sur son lancer de compétence : '{capacite}'.")
+
+            else:
+                if pnj.sub_abilities(capacite) == 1:
+                    await ctx.send(f"__{pnj.name}__ a perdu la compétence : '{capacite}'.")
+                else:
+                    await ctx.send(f"__{pnj.name}__ a fait un échec critique sur son lancer de compétence : '{capacite}'.")
+
+            save_game()
+
+        else:
+            index = capacities.index(capacite)
+            comment = ("échec critique", "échec", "succès", "succès critique")[pnj.capacity_roll(index)]
+            await ctx.send(f"__{pnj.name}__ a fait un {comment} sur son lancer " + ("de ", "d'")[index in (2, 4)] + capacities[index] + ".")

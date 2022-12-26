@@ -123,20 +123,21 @@ def phase_2(fighter, defender):
     return (fighter.stat[2] - defender.stat[2] > 20 * defender.get_level()) or (fighter.capacity_roll(2) >= 2) or (fighter.capacity_roll(1) == 3)
 
 
-def phase_3(fighters, attacker, defender):
+def phase_3(fighters, attacker, defender, player_weapon, target_weapon, target_index):
     level = fighters[attacker].get_level()
+    magical_damage = 0
+    if attacker == target_index: magical_damage = target_weapon.stat[7]
+    else: magical_damage = player_weapon.stat[7]
 
     damage = fighters[attacker].stat[1] + randint(-5 * level, 10 * level)
-    if fighters[attacker].stat[9] > fighters[attacker].max_weight:
-        damage -= (fighters[attacker].stat[9] - fighters[attacker].max_weight)
-        if fighters[attacker].state == 3: damage -= fighters[attacker].get_level() * 5
+    damage -= fighters[attacker].get_malus()
 
     damage -= fighters[defender].stat[5]
     if damage < 0: damage = 0
 
-    fighters[defender].stat[6] -= damage
+    fighters[defender].stat[6] -= (damage + magical_damage)
 
-    return damage
+    return damage, magical_damage
 
 
 async def fight_main(player, target, arme, data_player, ctx):
@@ -192,8 +193,8 @@ async def fight_main(player, target, arme, data_player, ctx):
 
     message += "```\n"
 
-    player.stat_add(player_weapon.stat)
-    target.stat_add(target_weapon.stat)
+    player.stat_add(player_weapon.stat, 0)
+    target.stat_add(target_weapon.stat, 0)
 
     # Qui commence
     fighters, target_index = phase_1(player, target)
@@ -216,10 +217,11 @@ async def fight_main(player, target, arme, data_player, ctx):
             if phase_2(fighters[attacker], fighters[defender]):
                 message += " et touche sa cible.\n"
 
-                damage = phase_3(fighters, attacker, defender)
-                if damage:
+                damage, magical_damage = phase_3(fighters, attacker, defender, player_weapon, target_weapon, target_index)
+                
+                if damage + magical_damage:
                     if fighters[defender].state != 5 and fighters[defender].stat[6] < fighters[defender].get_max_health(): fighters[defender].state = 3
-                    message += f"__{fighters[defender].name}__ subit {damage} point{('', 's')[damage > 1]} de dégâts.\n"
+                    message += f"__{fighters[defender].name}__ subit {damage} (+{magical_damage}) point{('', 's')[damage + magical_damage > 1]} de dégâts (magiques).\n"
                 else:
                     message += f"La défense de __{fighters[defender].name}__ encaisse les dégats.\n"
 
@@ -243,8 +245,8 @@ async def fight_main(player, target, arme, data_player, ctx):
 
         if end: break
 
-    player.stat_sub(player_weapon.stat)
-    target.stat_sub(target_weapon.stat)
+    player.stat_sub(player_weapon.stat, 0)
+    target.stat_sub(target_weapon.stat, 0)
 
     return message
 

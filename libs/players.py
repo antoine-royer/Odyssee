@@ -87,6 +87,14 @@ class Player:
     def get_max_health(self):
         return (100 + (self.get_level() - 1) * 25)
 
+    def iswounded(self):
+        max_health = self.get_max_health()
+        if self.stat[6] < max_health: return max_health - self.stat[6]
+        else: return 0
+
+    def get_malus(self):
+        return self.iswounded() // 10 + self.isoverweight() // 10
+
     def get_level(self):
         return (sum(self.stat[:5]) // 100) + 1
 
@@ -94,11 +102,7 @@ class Player:
         return get_state_by_id(self.state)
 
     def capacity_roll(self, capacity_index):
-        overweight = self.isoverweight()
-        if self.state == 3 or overweight: malus = (self.get_max_health() - self.stat[6]) // 10 + (overweight // 10)
-        else: malus = 0
-        
-        point = (randint(1, 20) + self.stat[capacity_index] - malus) / (40 * self.get_level())
+        point = (randint(1, 20) + self.stat[capacity_index] - self.get_malus()) / (40 * self.get_level())
 
         if point >= 0.75:
             return 3 # succès critique
@@ -111,12 +115,18 @@ class Player:
     def get_stat(self):
         return [self.name, self.species, self.get_level()] + self.stat + [self.place, [(i.name, i.quantity) for i in self.inventory], self.note, self.avatar, [i.name for i in self.power], self.get_state(), [(i[0], i[1]) for i in self.abilities]]
 
-    # Du courage à la mana (incluse)
-    def stat_add(self, stat_to_add):
-        for i in range(8): self.capacity_modify(i, stat_to_add[i])
+    # Du courage à la mana
+    def stat_add(self, stat_to_add, obj_type=1):
+        # si l'objet rapporte de la Mana
+        if obj_type in (1, 2): obj_type = 1
+        # si l'objet augmente le potentiel magique
+        else: obj_type = 0
+        for i in range(7 + obj_type): self.capacity_modify(i, stat_to_add[i])
 
-    def stat_sub(self, stat_to_sub):
-        for i in range(8): self.capacity_modify(i, -stat_to_sub[i])
+    def stat_sub(self, stat_to_sub, obj_type=1):
+        if obj_type in (1, 2): obj_type = 1
+        else: obj_type = 0
+        for i in range(7 + obj_type): self.capacity_modify(i, -stat_to_sub[i])
 
     def have(self, object_name): # Renvoie : (index, Object), Object.type = -1 si l'objet est inconnu ; index = -1 si l'objet n'est pas possédé
         object_name = get_official_name(object_name, True)
@@ -143,7 +153,7 @@ class Player:
             self.stat[9] += obj.stat[9]
             obj.name = object_name
             obj.quantity = 1
-            if obj.object_type in (0, 2, 7, 8): self.stat_add(obj.stat)
+            if obj.object_type in (0, 2, 7, 8): self.stat_add(obj.stat, obj.object_type)
             if obj.object_type != 2:
                 self.inventory.append(obj)
                 return 2
@@ -162,7 +172,7 @@ class Player:
             self.stat[9] -= nb * obj.stat[9]
             self.inventory[index].quantity -= nb
             if self.inventory[index].quantity <= 0: self.inventory.pop(index)
-            if obj.object_type in (0, 7, 8): self.stat_sub(obj.stat)
+            if obj.object_type in (0, 7, 8): self.stat_sub(obj.stat, obj.object_type)
             return 1
 
     def object_use(self, object_name, nb):
@@ -175,7 +185,7 @@ class Player:
         if obj.object_type in (1, 5, 8):
             self.stat[9] -= nb * obj.stat[9]
             for _ in range(nb):
-                self.stat_add(obj.stat)
+                self.stat_add(obj.stat, obj.object_type)
             self.inventory[index].quantity -= nb
             if self.inventory[index].quantity <= 0: self.inventory.pop(index)
             return 1
@@ -278,6 +288,8 @@ class Player:
     def sleep(self):
         lvl = self.get_level()
         max_mana = lvl * 5
+        for obj in self.inventory:
+            if obj.object_type == 0: max_mana += obj.stat[7]
 
         self.stat_sub(self.stat_modifier)
         self.stat_modifier = [0 for _ in range(8)]
@@ -288,11 +300,9 @@ class Player:
             self.stat[6] += 5 * lvl
 
         # Régénération de la mana
-        if self.state != 3 and self.stat[7] < 5 + (lvl - 1):
+        if self.state != 3 and self.stat[7] < max_mana:
             mana = 1 + (lvl // 2)
-            for obj in self.inventory:
-                mana += obj.stat[7]
-            self.stat[7] += mana
+            self.stat[7] += 1 + (lvl // 2)
 
         # Empoisonné
         if self.state == 1:
