@@ -71,7 +71,6 @@ def get_official_name(object_name, return_entry=False):
 
     database = c.execute("SELECT nom FROM objets").fetchall()
     table.close()
-
     object_name = object_name.lower()
     match = {len(name[0]): name[0] for name in database if name[0] in object_name}
 

@@ -46,6 +46,18 @@ def get_species(species_name):
     return database[0]
 
 
+def get_all_species():
+    table = sqlite3.connect("BDD/odyssee_powers.db")
+    c = table.cursor()
+    database = c.execute("SELECT noms FROM especes").fetchall()
+    table.close()
+
+    names = ""
+    for name in database:
+        names += f"{name[0]} ; "
+    return names[:-3]
+
+
 def get_default_power(species_name):
     species_id = get_species_id(species_name)
 

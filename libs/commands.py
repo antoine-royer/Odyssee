@@ -133,7 +133,7 @@ class OdysseeCommands(commands.Cog):
             for embed in make_embed(fields, "Rubique d'aide", f"Entrez : `{self.PREFIX}aide <commande>` pour plus d'informations."):
                 await ctx.send(embed=embed)
 
-    @commands.command(help="Votre espèce est à préciser impérativement. Si aucun pseudonyme n'est précisé, Odyssée prendra votre nom d'utilisateur.", brief="Créer un nouveau joueur")
+    @commands.command(help=f"Votre espèce est à préciser impérativement. Si aucun pseudonyme n'est précisé, Odyssée prendra votre nom d'utilisateur.\n__Liste des espèces connues :__ {get_all_species()}", brief="Créer un nouveau joueur")
     @commands.check(server_id)
     async def nouveau(self, ctx, espece: str, nom: str=None):
         user = get_user(ctx)
@@ -343,7 +343,7 @@ class OdysseeCommands(commands.Cog):
             else: nombre = ""
             await ctx.send(f"__{player.name}__ prend {nom}{nombre}")
         else:
-            await send_error(ctx, f"__{player.name}__ ne peut pas prendre l'objet : '{nom}' (objet non préhensile ou déjà possédé)")
+            await send_error(ctx, f"__{player.name}__ ne peut pas prendre l'objet : '{nom}' (objet non préhensible ou déjà possédé)")
 
         save_game()
 
@@ -484,7 +484,7 @@ class OdysseeCommands(commands.Cog):
                 await ctx.send(f"__{player.name}__ a fait un échec sur son lancer de compétence : '{capacite}'.")
 
             else:
-                if player.sub_abilities(capacite) == 1:
+                if player.sub_abilities(capacite, check) == 1:
                     await ctx.send(f"__{player.name}__ a perdu la compétence : '{capacite}'.")
                 else:
                     await ctx.send(f"__{player.name}__ a fait un échec critique sur son lancer de compétence : '{capacite}'.")
@@ -601,7 +601,7 @@ class OdysseeCommands(commands.Cog):
             if check == -1:
                 obj = get_object(get_official_name(nom, shop_id))
                 if shop_id == -1: await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{nom}'"); return
-                if obj.shop_id == -1: await send_error(ctx, f"cet objet : '{nom}' n'est pas vendu ici"); return 
+                if obj.shop_id == -1: await send_error(ctx, f"l'objet : '{nom}' n'est pas vendu ici"); return 
 
             if obj.shop_id == -1: shop = "Cet objet n'est rattaché à aucun magasin"
             else: shop = f"Magasin de rattachement : {get_shop_name()[obj.shop_id][0]}"
@@ -1019,7 +1019,7 @@ class AdminCommands(commands.Cog):
 
     @commands.command(help="Permet de modifier les statistiques d'un objet possédé par un joueur.", brief="Permet de modifier les caractéristique d'une arme")
     @commands.check(is_admin)
-    async def modifier_objet(self, ctx, nom: str, objet:str, capacite: str, valeur: int):
+    async def modifier_objet(self, ctx, nom: str, objet:str, capacite: str, valeur):
         player_id = get_id_from_name(nom)
         if not player_id: await send_error(ctx, f"le joueur : '{nom}' n'existe pas"); return
 
@@ -1028,7 +1028,13 @@ class AdminCommands(commands.Cog):
         
         if index == -1:
             await send_error(ctx, f"__{player.name}__ ne possède pas l'objet : '{objet}'")
+        
         else:
+            try:
+                valeur = int(valeur)
+            except:
+                pass
+
             capacities = get_capacities()
             capacite = capacite.lower()
 
@@ -1046,9 +1052,30 @@ class AdminCommands(commands.Cog):
                 new_type = get_type_by_id(valeur)
                 if new_type:
                     player.inventory[index].object_type = valeur
-                    await ctx.send(f"Le type de l'objet '{objet}' de __{player.name}__ est devenu : '{new_type}'")
+                    await ctx.send(f"Le type de l'objet '{objet}' de __{player.name}__ est devenu : '{new_type}'.")
                 else:
                     await send_error(ctx, f"{valeur} n'est pas l'indice d'un type connu")
+
+            elif capacite == "magasin":
+                shops_name = get_shop_name()
+                if 0 <= valeur < len(shops_name):
+                    new_shop = get_shop_name()[valeur][0]
+                    player.inventory[index].shop_id = valeur
+                    await ctx.send(f"Vous pouvez désormais vendre l'objet '{objet}' dans les magasins de type {new_shop}.")
+                elif valeur == -1:
+                    player.inventory[index].shop_id = valeur
+                    await ctx.send(f"Vous ne pouvez plus vendre l'objet '{objet}' dans un magasin.")
+                else:
+                    await send_error(ctx, f"{valeur} n'est pas un indice de magasin connu")
+
+            elif capacite == "nom":
+                check, _ = player.have(valeur)
+
+                if check == -1 or check == index:
+                    player.inventory[index].name = valeur
+                    await ctx.send(f"L'objet '{objet}' s'appelle désormais '{valeur}'.")
+                else:
+                    await send_error(ctx, f"'{valeur}' est un autre objet de l'inventaire")
 
             else:
                 await send_error(ctx, f"'{capacite}' n'est pas une capacité connue")
@@ -1144,8 +1171,7 @@ class AdminCommands(commands.Cog):
 
         table = sqlite3.connect("BDD/odyssee_objects.db")
         c = table.cursor()
-
-        c.execute(f"INSERT INTO objets VALUES ({magasin}, {type_objet}, '{nom}', {courage}, {force}, {habilete}, {rapidite}, {intelligence}, {defense}, {vie}, {mana}, {argent}, {poids})")
+        c.execute(f"INSERT INTO objets VALUES ({magasin}, {type_objet}, \"{nom}\", {courage}, {force}, {habilete}, {rapidite}, {intelligence}, {defense}, {vie}, {mana}, {argent}, {poids})")
 
         table.commit()
         table.close()
