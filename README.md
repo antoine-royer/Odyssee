@@ -92,7 +92,7 @@ Dans votre répertoire personnel, allez dans le dossier `Odyssee` et créez un f
 
 ```
     {
-        "TOKEN": < le token copié à l'étape précédente >,
+        "TOKEN": < le token opié à l'étape précédente >,
         "PREFIX": "+",
         "ADMIN": {}
     }
@@ -101,8 +101,6 @@ Dans votre répertoire personnel, allez dans le dossier `Odyssee` et créez un f
 À noter que le token doit être entre guillemets et doit rester secret.
 
 Le préfix vous permettra d'appeller le bot lorsque vous jouerez, prenez un charactère simple, de préférence unique, évitez les charactères déjà pris (*, /, _…).
-
-Le sépérateur va séparer les arguments des commandes transmises au bot, de même vous pouvez mettre un caractère de votre choix. Évitez les virgules qui ne sont pas pratiques et les espaces qui produiront des erreurs.
 
 Le dictionnaire ADMIN est composé des identifiants des serveurs en clefs (sous forme de chaînes de caractères) et des idenfiants des maîtres du jeux en valeurs. Ces derniers auront ainsi accès à quelques commandes supplémentaires (surtout pour modérer et modifier les joueurs). Pour connaître l'idenfiant d'une personne, activez le mode développeur de Discord et faîtes clique droit sur la personne, dernière ligne 'copier l'identifiant'. Il s'agit bien d'un chiffre et non d'une chaîne de caractères.
 

@@ -158,7 +158,7 @@ class OdysseeCommands(commands.Cog):
         player = get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        if not url: player.avatar = str(ctx.author.avatar_url)
+        if not url: player.avatar = str(ctx.author.avatar.url)
         else: player.avatar = url
         await ctx.send(f"L'avatar de __{player.name}__ a été mis à jour.")
         save_game()
