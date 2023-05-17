@@ -71,7 +71,7 @@ class Player:
 
     async def get_avatar(self, guild):
         player = await guild.fetch_member(self.id)
-        self.avatar = str(player.avatar_url)
+        self.avatar = str(player.avatar.url)
 
     def isalive(self):
         return self.stat[6] > 0

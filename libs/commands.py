@@ -145,7 +145,7 @@ class OdysseeCommands(commands.Cog):
         if not nom: nom = user[0]
 
         if not user[1] in self.data_player:
-            self.data_player.update({user[1] : Player(user[1], nom, espece, str(ctx.author.avatar_url))})
+            self.data_player.update({user[1] : Player(user[1], nom, espece, str(ctx.author.avatar.url))})
             await ctx.send(f"{nom}, un(e) {espece}, est apparu(e).")
         else:
             await ctx.send(f"*Erreur : {user[0]} est déjà enregistré(e).*")
