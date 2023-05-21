@@ -1160,7 +1160,7 @@ class AdminCommands(commands.Cog):
         save_game(nom)
 
         with open(f"saves/save.json", "r") as file:
-            await ctx.send(f"**Sauvegarde**", file=discord.File("saves/save.json"))
+            await ctx.send(f"**Sauvegarde**", file=discord.File(f"saves/save_{nom}.json"))
 
 
     @commands.command(help="Permet d'ajouter un objet au jeu. 'magagin' et 'type_objet' sont les id et non les noms.\n\n__Magasins :__\n" + "\n".join([f"{index} - {value[0]}" for index, value in enumerate(get_shop_name())]) + "\n\n__Types :__\n" + "\n".join([f"{index} - {value}" for index, value in get_all_types()]), brief="Ajouter un objet")
