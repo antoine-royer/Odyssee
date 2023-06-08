@@ -26,7 +26,6 @@ intents = discord.Intents.default()
 odyssee = commands.Bot(command_prefix=commands.when_mentioned_or(config["PREFIX"]), strip_after_prefix=True, intents=discord.Intents.all())
 save = load_save()
 
-
 async def setup():
     for cmnd_module in (OdysseeCommands, AdminCommands):
         await odyssee.add_cog(cmnd_module(config, save, odyssee))
