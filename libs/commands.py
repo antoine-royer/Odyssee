@@ -281,7 +281,7 @@ class OdysseeCommands(commands.Cog):
         embed.add_field(name="Divers", value=misc, inline=True)
         embed.add_field(name="Lieu", value=info[14], inline=True)
         embed.add_field(name="Inventaire", value=inventory, inline=True)
-        embed.add_field(name="Pouvoirs", value=powers, inline=True)
+        embed.add_field(name=f"Pouvoirs ({len(joueur.power)}/{joueur.get_max_power()})", value=powers, inline=True)
         embed.add_field(name="Compétences", value=abilities, inline=True)
         embed.add_field(name="Notes", value=note, inline=True)
 
@@ -376,7 +376,7 @@ class OdysseeCommands(commands.Cog):
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
         if nombre <= 0: nombre = 1
-        check, spell_tome = player.object_use(nom, nombre)
+        check = player.object_use(nom, nombre)
 
         if check == 1:
             await ctx.send(f"__{player.name}__ utilise {nom} ({nombre}).")

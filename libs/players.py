@@ -191,17 +191,19 @@ class Player:
                 self.stat_add(obj.stat, obj.object_type)
             self.inventory[index].quantity -= nb
             if self.inventory[index].quantity <= 0: self.inventory.pop(index)
-            return 1, None
+            return 1
+            
         elif obj.object_type == 9:
-            self.stat[9] -= obj.stat[9]
             sucess = self.power_add(obj.official_name.capitalize())
             if sucess in (0, 1):
                 return 2
+
+            self.stat[9] -= obj.stat[9]
             self.inventory.pop(index)
             return 1
 
         else:
-            return 2, None
+            return 2
 
     def capacity_modify(self, capacity_index, amount):
         self.stat[capacity_index] += amount

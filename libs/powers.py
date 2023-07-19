@@ -97,7 +97,7 @@ def get_power_by_name(power_name):
     table = sqlite3.connect("BDD/odyssee_powers.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE nom = \"{power_name}\"").fetchall()
+    database = c.execute(f"SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE nom = \"{power_name.lower()}\"").fetchall()
     table.close()
     
     if database:
