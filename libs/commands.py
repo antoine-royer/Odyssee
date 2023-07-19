@@ -376,7 +376,7 @@ class OdysseeCommands(commands.Cog):
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
         if nombre <= 0: nombre = 1
-        check = player.object_use(nom, nombre)
+        check, spell_tome = player.object_use(nom, nombre)
 
         if check == 1:
             await ctx.send(f"__{player.name}__ utilise {nom} ({nombre}).")
@@ -443,7 +443,7 @@ class OdysseeCommands(commands.Cog):
         player = get_player_from_id(ctx.author.id)
         if not player: await send_error(ctx, f"{ctx.author.name} n'est pas un joueur enregistré"); return
 
-        if faces < 4: faces = 4
+        if faces < 2: faces = 2
         if nombre < 1: nombre = 1
         result = randint(nombre, nombre * faces)
 
@@ -779,7 +779,7 @@ class OdysseeCommands(commands.Cog):
             if new_player_id > 0: new_player_id = -1
             level = get_avg_level(self.data_player)
 
-            stat = stat_gen([1 for _ in range(5)], randint(1, int(1.5 * level)), True)
+            stat = stat_gen([1 for _ in range(5)], randint(level // 2, level + 1), True)
             self.data_player.update({new_player_id : Player(new_player_id, adversaire, "Ennemi", "", stat, player.place)})
             save_game()
 

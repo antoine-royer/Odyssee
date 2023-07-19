@@ -101,6 +101,9 @@ class Player:
     def get_state(self):
         return get_state_by_id(self.state)
 
+    def get_max_power(self):
+        return 3 + self.get_level() // 2
+
     def capacity_roll(self, capacity_index):
         point = (randint(1, 20) + self.stat[capacity_index] - self.get_malus()) / (40 * self.get_level())
 
@@ -188,9 +191,17 @@ class Player:
                 self.stat_add(obj.stat, obj.object_type)
             self.inventory[index].quantity -= nb
             if self.inventory[index].quantity <= 0: self.inventory.pop(index)
+            return 1, None
+        elif obj.object_type == 9:
+            self.stat[9] -= obj.stat[9]
+            sucess = self.power_add(obj.official_name.capitalize())
+            if sucess in (0, 1):
+                return 2
+            self.inventory.pop(index)
             return 1
+
         else:
-            return 2
+            return 2, None
 
     def capacity_modify(self, capacity_index, amount):
         self.stat[capacity_index] += amount
@@ -220,7 +231,7 @@ class Player:
             return 0
 
         # Pouvoir déjà possédé ou trop de pouvoirs
-        elif power.power_id in [i.power_id for i in self.power] or len(self.power) >= 3 + (self.stat[4] // 20):
+        elif power.power_id in [i.power_id for i in self.power] or len(self.power) >= self.get_max_power():
             return 1
         
         # Succès
@@ -301,8 +312,7 @@ class Player:
 
         # Régénération de la mana
         if self.state != 3 and self.stat[7] < max_mana:
-            mana = 1 + (lvl // 2)
-            self.stat[7] += 1 + (lvl // 2)
+            self.stat[7] += 2 + (lvl // 2)
 
         # Empoisonné
         if self.state == 1:
