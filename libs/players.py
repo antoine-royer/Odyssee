@@ -20,7 +20,7 @@ def stat_gen(factor, level=1, enemy=False):
     if enemy:
         stat += [randint(25, 100 + 50 * (level - 1)), 5, randint(5 * level, 10 * (level + 1)), 0, color]
     else:
-        stat += [100, 5, 30, 0, color]
+        stat += [100, 5 * level, 30, 0, color]
     return stat
 
 
@@ -103,6 +103,12 @@ class Player:
 
     def get_max_power(self):
         return 3 + self.get_level() // 2
+
+    def get_max_mana(self):
+        max_mana = self.get_level() * 5
+        for obj in self.inventory:
+            if obj.object_type == 0: max_mana += obj.stat[7]
+        return max_mana
 
     def capacity_roll(self, capacity_index):
         point = (randint(1, 20) + self.stat[capacity_index] - self.get_malus()) / (40 * self.get_level())
@@ -300,9 +306,6 @@ class Player:
 
     def sleep(self):
         lvl = self.get_level()
-        max_mana = lvl * 5
-        for obj in self.inventory:
-            if obj.object_type == 0: max_mana += obj.stat[7]
 
         self.stat_sub(self.stat_modifier)
         self.stat_modifier = [0 for _ in range(8)]
@@ -313,7 +316,7 @@ class Player:
             self.stat[6] += 5 * lvl
 
         # Régénération de la mana
-        if self.state != 3 and self.stat[7] < max_mana:
+        if self.state != 3 and self.get_max_mana():
             self.stat[7] += 2 + (lvl // 2)
 
         # Empoisonné

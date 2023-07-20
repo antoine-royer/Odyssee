@@ -244,7 +244,7 @@ class OdysseeCommands(commands.Cog):
 
         # Misceleanous
         misc = ""
-        for index, misc_name in enumerate((f"Vie ...#/{joueur.get_max_health()} PV", "Mana ..#", "Argent # Drachmes", f"Poids .#/{joueur.get_max_weight()}")):
+        for index, misc_name in enumerate((f"Vie ...#/{joueur.get_max_health()} PV", f"Mana ..#/{joueur.get_max_mana()}", "Argent # Drachmes", f"Poids .#/{joueur.get_max_weight()}")):
             before, after = misc_name.split("#")
             misc += f"`{before}.: {info[index + 9]}{after}`\n"
 
@@ -907,7 +907,7 @@ class AdminCommands(commands.Cog):
             await send_error(ctx, f"le joueur : '{nom}' n'existe pas")
 
 
-    @commands.command(help=f"Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités ({', '.join(get_capacities())}) et statistiques, l'inventaire, le lieu, les états, les pouvoirs et les compétences.", brief="Modifier un joueur")
+    @commands.command(help=f"Permet de mofifier chaque caractéristique d'un joueur.\n\n__Caractétistiques connues :__ les capacités ({', '.join(get_capacities())}), les statistiques, l'inventaire, le lieu, les états, les pouvoirs les compétences et les notes.", brief="Modifier un joueur")
     @commands.check(is_admin)
     async def modifier(self, ctx, nom: str, capacite: str, valeur, nombre: int=1):
         player_id = get_id_from_name(nom)
@@ -1014,6 +1014,15 @@ class AdminCommands(commands.Cog):
                     await ctx.send(f"__{player.name}__ a perdu la compétence : '{valeur}'.")
                 else:
                     await ctx.send(f"__{player.name}__ a perdu {nombre} point{('', 's')[nombre > 1]} sur la compétence : '{valeur}'.")
+
+        elif capacite == "note+":
+            player.add_note(valeur)
+            await ctx.send(f"__{player.name}__ a ajouté la note :\n> {valeur}")
+
+        elif capacite == "note-":
+            content = player.del_note(int(valeur))
+            if content:
+                await ctx.send(f"__{player.name}__ a enlevé la note :\n> {content}")
 
         save_game()
 
