@@ -334,9 +334,3 @@ class Player:
         # Transformé | Invisible
         if self.state in (5, 6):
             self.state = (3, 0)[self.stat[6] >= self.get_max_health()]
-
-
-
-
-
-

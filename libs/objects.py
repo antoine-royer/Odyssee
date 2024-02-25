@@ -106,4 +106,3 @@ def get_type_by_id(type_id):
     table.close()
 
     if database: return database[0][0]
-

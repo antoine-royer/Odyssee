@@ -69,5 +69,3 @@ def get_all_landtype():
     table.close()
 
     return ", ".join([i[0] for i in database])
-
-

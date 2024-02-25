@@ -333,4 +333,3 @@ def invisibilite(user, players, target=None):
 
 def etincelles_violettes(user, players, target=None):
     return f"__{user.name}__ pousse un râle guttural en renversant la tête en arrière et lance des étincelles violettes. (← C'est de la magie :point_up:)"
-
