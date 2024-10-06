@@ -1,6 +1,5 @@
 import sqlite3
 
-
 # --- Constructeur des objets --- #
 
 
@@ -14,8 +13,14 @@ class Object:
         self.quantity = quantity
 
     def export(self):
-        return [self.name, self.official_name, self.stat, self.object_type, self.shop_id, self.quantity]
-
+        return [
+            self.name,
+            self.official_name,
+            self.stat,
+            self.object_type,
+            self.shop_id,
+            self.quantity,
+        ]
 
 
 def get_shop_name():
@@ -27,7 +32,7 @@ def get_shop_name():
         ("écurie", "haras", "ferme"),
         ("port", "accastillage"),
         ("librairie", "bibliothèque", "libraire", "bouquiniste"),
-        ("orfèvre", "bijoutier")
+        ("orfèvre", "bijoutier"),
     )
 
 
@@ -47,20 +52,24 @@ def get_object(object_name, shop_id=None):
     c = table.cursor()
 
     if shop_id:
-        database = c.execute(f"""
+        database = c.execute(
+            f"""
             SELECT nom, courage, force, habilete, rapidite, intelligence, defense, vie, mana, argent, poids, type, magasin FROM objets
             WHERE nom = \"{object_name}\" AND magasin = {shop_id}
-        """).fetchall()
+        """
+        ).fetchall()
     else:
-        database = c.execute(f"""
+        database = c.execute(
+            f"""
             SELECT nom, courage, force, habilete, rapidite, intelligence, defense, vie, mana, argent, poids, type, magasin FROM objets
             WHERE nom = \"{object_name}\"
-        """).fetchall()
+        """
+        ).fetchall()
     table.close()
 
     if database:
         database = database[0]
-        return Object(object_name, database[0], list(database[1: -2]), database[-2], database[-1]) 
+        return Object(object_name, database[0], list(database[1:-2]), database[-2], database[-1])
     else:
         return Object(object_name, object_name, [int(i == 9) for i in range(10)], -1, -1)
 
@@ -86,10 +95,12 @@ def get_object_by_shop(shop_id):
     table = sqlite3.connect("BDD/odyssee_objects.db")
     c = table.cursor()
 
-    database = c.execute(f"""
+    database = c.execute(
+        f"""
         SELECT nom, courage, force, habilete, rapidite, intelligence, defense, vie, mana, argent, poids, type, magasin FROM objets
         WHERE magasin = {shop_id}
-        """).fetchall()
+        """
+    ).fetchall()
     table.close()
 
     return [Object(i[0], i[0], i[1:-2], i[-2], i[-1]) for i in database]
@@ -99,10 +110,13 @@ def get_type_by_id(type_id):
     table = sqlite3.connect("BDD/odyssee_objects.db")
     c = table.cursor()
 
-    database = c.execute(f"""
+    database = c.execute(
+        f"""
         SELECT description FROM types
         WHERE id = {type_id}  
-        """).fetchall()
+        """
+    ).fetchall()
     table.close()
 
-    if database: return database[0][0]
+    if database:
+        return database[0][0]

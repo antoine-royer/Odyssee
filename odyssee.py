@@ -8,13 +8,13 @@
 # --------------------------------------------------
 
 import asyncio
-import discord
-from discord.ext import commands
 import json
 import os
 
-from libs.commands import OdysseeCommands, AdminCommands, load_save
+import discord
+from discord.ext import commands
 
+from libs.commands import AdminCommands, OdysseeCommands, load_save
 
 if not "saves" in os.listdir():
     os.mkdir("saves")
@@ -23,8 +23,13 @@ with open("config.json", "r") as file:
     config = json.load(file)
 
 intents = discord.Intents.default()
-odyssee = commands.Bot(command_prefix=commands.when_mentioned_or(config["PREFIX"]), strip_after_prefix=True, intents=discord.Intents.all())
+odyssee = commands.Bot(
+    command_prefix=commands.when_mentioned_or(config["PREFIX"]),
+    strip_after_prefix=True,
+    intents=discord.Intents.all(),
+)
 save = load_save()
+
 
 async def setup():
     for cmnd_module in (OdysseeCommands, AdminCommands):

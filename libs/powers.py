@@ -1,7 +1,7 @@
 import sqlite3
 
-
 # --- Constructor --- #
+
 
 class Power:
     def __init__(self, name, description, enemy, power_id, mana_cost):
@@ -16,6 +16,7 @@ class Power:
 
 
 # --- Database gestion --- #
+
 
 def get_species_id(species_name):
     table = sqlite3.connect("BDD/odyssee_powers.db")
@@ -67,11 +68,13 @@ def get_default_power(species_name):
     table = sqlite3.connect("BDD/odyssee_powers.db")
     c = table.cursor()
 
-    database = c.execute(f"""
+    database = c.execute(
+        f"""
         SELECT pouvoirs.nom, description, adversaire, pouvoirs.id, cout_mana FROM pouvoirs
         JOIN especes ON especes.id = pouvoirs.espece
         WHERE especes.id = {species_id}
-    """).fetchall()
+    """
+    ).fetchall()
     table.close()
 
     if database:
@@ -84,7 +87,9 @@ def get_power_by_id(power_id):
     table = sqlite3.connect("BDD/odyssee_powers.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE id = {power_id}").fetchall()
+    database = c.execute(
+        f"SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE id = {power_id}"
+    ).fetchall()
     table.close()
 
     if database:
@@ -97,9 +102,11 @@ def get_power_by_name(power_name):
     table = sqlite3.connect("BDD/odyssee_powers.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE nom = \"{power_name.lower()}\"").fetchall()
+    database = c.execute(
+        f'SELECT nom, description, adversaire, id, cout_mana FROM pouvoirs WHERE nom = "{power_name.lower()}"'
+    ).fetchall()
     table.close()
-    
+
     if database:
         return Power(*database[0])
     else:
@@ -107,6 +114,7 @@ def get_power_by_name(power_name):
 
 
 # --- Powers --- #
+
 
 def power_use(power_id):
     return (
@@ -137,7 +145,7 @@ def power_use(power_id):
 
 def nyctalopie(user, players, target=None):
     pts = 5 * user.get_level()
-    user.stat_modifier[2] += pts    
+    user.stat_modifier[2] += pts
     return f"__{user.name}__ a une vision améliorée et gagne {pts} points d'Habileté."
 
 
@@ -167,11 +175,13 @@ def guerison(user, players, target=None):
         max_health = player.get_max_health()
         if player.place == user.place and player.stat[6] < max_health:
             player.stat[6] += pts
-            if player.state == 3 and player.stat[6] >= max_health: player.state = 0
+            if player.state == 3 and player.stat[6] >= max_health:
+                player.state = 0
 
             msg += f" - __{player.name}__ a retrouvé {pts} points de Vie.\n"
             index += 1
-    if index == 0: msg += "Tous les joueurs présents sont en pleine santés."
+    if index == 0:
+        msg += "Tous les joueurs présents sont en pleine santés."
     return msg
 
 
@@ -227,7 +237,8 @@ def boule_de_feu(user, players, target=None):
     if target.stat[6] > pts:
         for capacity_index in (0, 1, 6):
             target.capacity_modify(capacity_index, -pts)
-        if target.state == 0 and target.stat[6] < target.get_max_health(): target.state = 3
+        if target.state == 0 and target.stat[6] < target.get_max_health():
+            target.state = 3
         return f"__{target.name}__ est atteint par la boule de feu ! Votre cible perd {pts} points de Courage, de Force et de Vie."
     else:
         target.state = 2
@@ -275,7 +286,8 @@ def charge(user, players, target=None):
 
     if target.stat[6] > pts:
         target.capacity_modify(6, -pts)
-        if target.state == 0 and target.stat[6] < target.get_max_health(): target.state = 3
+        if target.state == 0 and target.stat[6] < target.get_max_health():
+            target.state = 3
         return f"__{user.name}__ se jette sur __{target.name}__ qui perd {pts} points de Vie."
     else:
         target.state = 2
@@ -288,7 +300,8 @@ def pourfendre(user, players, target=None):
 
     if target.stat[6] > pts:
         target.capacity_modify(6, -pts)
-        if target.state == 0 and target.stat[6] < target.get_max_health(): target.state = 3
+        if target.state == 0 and target.stat[6] < target.get_max_health():
+            target.state = 3
         return f"__{target.name}__ se fait transpercer et perd {pts} points de Vie."
     else:
         target.state = 2

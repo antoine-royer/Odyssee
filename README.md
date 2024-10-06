@@ -72,7 +72,7 @@ bs4 est une librairie qui permet d'analyser le code de sites web et d'extraire d
 
 Dans un terminal, entrez : 
 
-`$ git clone https://github.com/Shadow15510/Odyssee.git`
+`$ git clone https://github.com/antoine-royer/Odyssee.git`
 
 Cette commande va copier l'intégralité du dépôt à la racine de votre répertoire personnel.
 

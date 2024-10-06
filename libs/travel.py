@@ -1,12 +1,13 @@
 import sqlite3
 
 
-
 def get_travel_mean(mean_name):
     table = sqlite3.connect("BDD/odyssee_travel.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT km_heure, par_jour, mer FROM moyens_transport WHERE nom = \"{mean_name.lower()}\"").fetchall()
+    database = c.execute(
+        f'SELECT km_heure, par_jour, mer FROM moyens_transport WHERE nom = "{mean_name.lower()}"'
+    ).fetchall()
     table.close()
 
     if database:
@@ -29,7 +30,9 @@ def get_weather(weather_name):
     table = sqlite3.connect("BDD/odyssee_travel.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT sur_terre, sur_mer FROM meteo WHERE nom = \"{weather_name.lower()}\"").fetchall()
+    database = c.execute(
+        f'SELECT sur_terre, sur_mer FROM meteo WHERE nom = "{weather_name.lower()}"'
+    ).fetchall()
     table.close()
 
     if database:
@@ -52,7 +55,9 @@ def get_landtype(landtype_name):
     table = sqlite3.connect("BDD/odyssee_travel.db")
     c = table.cursor()
 
-    database = c.execute(f"SELECT route, chemin, hors_piste FROM terrain WHERE nom = \"{landtype_name.lower()}\"").fetchall()
+    database = c.execute(
+        f'SELECT route, chemin, hors_piste FROM terrain WHERE nom = "{landtype_name.lower()}"'
+    ).fetchall()
     table.close()
 
     if database:
